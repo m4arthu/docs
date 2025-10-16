@@ -101,7 +101,7 @@ braix API uses standard HTTP status codes to indicate the success or failure of 
 const axios = require('axios');
 
 class braixClient {
-  constructor(apiKey, baseUrl = 'https://api.braix.com') {
+  constructor(apiKey, baseUrl = 'https://api.braix.com.br') {
     this.apiKey = apiKey;
     this.baseUrl = baseUrl;
   }
@@ -226,7 +226,7 @@ class APIError(braixError):
         self.status_code = status_code
 
 class braixClient:
-    def __init__(self, api_key, base_url='https://api.braix.com'):
+    def __init__(self, api_key, base_url='https://api.braix.com.br'):
         self.api_key = api_key
         self.base_url = base_url
         self.headers = {
@@ -306,7 +306,7 @@ class braixClient {
     private $apiKey;
     private $baseUrl;
     
-    public function __construct($apiKey, $baseUrl = 'https://api.braix.com') {
+    public function __construct($apiKey, $baseUrl = 'https://api.braix.com.br') {
         $this->apiKey = $apiKey;
         $this->baseUrl = $baseUrl;
     }
@@ -605,7 +605,7 @@ $logger->pushHandler(new Monolog\Handler\StreamHandler('combined.log', Monolog\L
 class braixClient {
     private $logger;
     
-    public function __construct($apiKey, $baseUrl = 'https://api.braix.com') {
+    public function __construct($apiKey, $baseUrl = 'https://api.braix.com.br') {
         $this->apiKey = $apiKey;
         $this->baseUrl = $baseUrl;
         $this->logger = new Monolog\Logger('braix');

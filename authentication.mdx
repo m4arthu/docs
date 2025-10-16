@@ -43,7 +43,7 @@ const getAccessToken = async () => {
   const clientSecret = process.env.braix_CLIENT_SECRET;
   const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
   
-  const response = await axios.post('https://api.braix.com/auth/token', {}, {
+  const response = await axios.post('https://api.braix.com.br/auth/token', {}, {
     headers: {
       'Authorization': `Basic ${credentials}`,
       'Content-Type': 'application/json'
@@ -55,7 +55,7 @@ const getAccessToken = async () => {
 
 // Step 2: Use access token for API calls
 const apiClient = axios.create({
-  baseURL: 'https://api.braix.com',
+  baseURL: 'https://api.braix.com.br',
   headers: {
     'Content-Type': 'application/json'
   }
@@ -79,7 +79,7 @@ def get_access_token():
     client_secret = os.getenv('braix_CLIENT_SECRET')
     credentials = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
     
-    response = requests.post('https://api.braix.com/auth/token', 
+    response = requests.post('https://api.braix.com.br/auth/token', 
                            headers={'Authorization': f'Basic {credentials}'})
     return response.json()['access_token']
 
@@ -89,7 +89,7 @@ headers = {
     'Authorization': f'Bearer {token}',
     'Content-Type': 'application/json'
 }
-response = requests.get('https://api.braix.com/transactions', headers=headers)
+response = requests.get('https://api.braix.com.br/transactions', headers=headers)
 ```
 
 ```php PHP
@@ -109,7 +109,7 @@ function getAccessToken() {
         ]
     ]);
     
-    $response = file_get_contents('https://api.braix.com/auth/token', false, $context);
+    $response = file_get_contents('https://api.braix.com.br/auth/token', false, $context);
     $data = json_decode($response, true);
     return $data['access_token'];
 }
@@ -124,12 +124,12 @@ $headers = [
 
 ```curl cURL
 # Step 1: Get access token
-curl -X POST "https://api.braix.com/auth/token" \
+curl -X POST "https://api.braix.com.br/auth/token" \
   -H "Authorization: Basic $(echo -n 'clientId:clientSecret' | base64)" \
   -H "Content-Type: application/json"
 
 # Step 2: Use the token for API calls
-curl -X GET "https://api.braix.com/transactions" \
+curl -X GET "https://api.braix.com.br/transactions" \
   -H "Authorization: Bearer your_access_token_here" \
   -H "Content-Type: application/json"
 ```
@@ -209,7 +209,7 @@ Store your client credentials in environment variables, never in code:
 ```bash .env
 braix_CLIENT_ID=your_client_id_here
 braix_CLIENT_SECRET=your_client_secret_here
-braix_BASE_URL=https://api.braix.com
+braix_BASE_URL=https://api.braix.com.br
 ```
 
 ### IP Whitelisting
@@ -301,12 +301,12 @@ You can test your authentication by first obtaining an access token and then mak
 <RequestExample>
 ```bash cURL
 # Step 1: Get access token
-curl -X POST "https://api.braix.com/auth/token" \
+curl -X POST "https://api.braix.com.br/auth/token" \
   -H "Authorization: Basic $(echo -n 'clientId:clientSecret' | base64)" \
   -H "Content-Type: application/json"
 
 # Step 2: Test with health endpoint
-curl -X GET "https://api.braix.com/health" \
+curl -X GET "https://api.braix.com.br/health" \
   -H "Authorization: Bearer your_access_token_here"
 ```
 </RequestExample>

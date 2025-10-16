@@ -42,7 +42,7 @@ Create a `.env` file with your braix credentials:
 
 ```bash .env
 braix_API_KEY=your_api_key_here
-braix_BASE_URL=https://api.braix.com
+braix_BASE_URL=https://api.braix.com.br
 braix_WEBHOOK_URL=https://your-domain.com/webhooks/braix
 ```
 
@@ -60,7 +60,7 @@ const axios = require('axios');
 
 const createPixPayment = async () => {
   try {
-    const response = await axios.post('https://api.braix.com/requestPayment', {
+    const response = await axios.post('https://api.braix.com.br/requestPayment', {
       amount: 10.50,
       pixKey: 'user@example.com',
       webhookUrl: 'https://your-domain.com/webhooks/braix',
@@ -89,7 +89,7 @@ import requests
 import os
 
 def create_pix_payment():
-    url = 'https://api.braix.com/requestPayment'
+    url = 'https://api.braix.com.br/requestPayment'
     headers = {
         'Authorization': f'Bearer {os.getenv("braix_API_KEY")}',
         'Content-Type': 'application/json'
@@ -118,7 +118,7 @@ create_pix_payment()
 ```php PHP
 <?php
 $apiKey = $_ENV['braix_API_KEY'];
-$url = 'https://api.braix.com/requestPayment';
+$url = 'https://api.braix.com.br/requestPayment';
 
 $data = [
     'amount' => 10.50,

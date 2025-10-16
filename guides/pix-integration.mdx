@@ -29,7 +29,7 @@ Let's start with a simple PIX payment integration:
 const axios = require('axios');
 
 class braixClient {
-  constructor(apiKey, baseUrl = 'https://api.braix.com') {
+  constructor(apiKey, baseUrl = 'https://api.braix.com.br') {
     this.apiKey = apiKey;
     this.baseUrl = baseUrl;
   }
@@ -77,7 +77,7 @@ import requests
 import os
 
 class braixClient:
-    def __init__(self, api_key, base_url='https://api.braix.com'):
+    def __init__(self, api_key, base_url='https://api.braix.com.br'):
         self.api_key = api_key
         self.base_url = base_url
         self.headers = {
@@ -118,7 +118,7 @@ class braixClient {
     private $apiKey;
     private $baseUrl;
     
-    public function __construct($apiKey, $baseUrl = 'https://api.braix.com') {
+    public function __construct($apiKey, $baseUrl = 'https://api.braix.com.br') {
         $this->apiKey = $apiKey;
         $this->baseUrl = $baseUrl;
     }
