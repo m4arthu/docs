@@ -2,8 +2,8 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "PinePay API",
   "logo": {
-    "dark": "/logo/dark.svg",
-    "light": "/logo/light.svg"
+    "dark": "https://api.braix.com.br/assets/icon.png",
+    "light": "https://api.braix.com.br/assets/icon.png"
   },
   "favicon": "/favicon.png",
   "colors": {
@@ -50,8 +50,7 @@
       "pages": [
         "api-reference/pix",
         "api-reference/transactions",
-        "api-reference/webhooks",
-        "api-reference/health"
+        "api-reference/webhooks"
       ]
     },
     {
