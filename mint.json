@@ -35,18 +35,7 @@
       "url": "guides"
     }
   ],
-  "anchors": [
-    {
-      "name": "Discord",
-      "icon": "discord",
-      "url": "https://discord.gg/pinepay"
-    },
-    {
-      "name": "GitHub",
-      "icon": "github",
-      "url": "https://github.com/pinepay"
-    }
-  ],
+
   "navigation": [
     {
       "group": "Get Started",
@@ -62,7 +51,6 @@
         "api-reference/pix",
         "api-reference/transactions",
         "api-reference/webhooks",
-        "api-reference/queue",
         "api-reference/health"
       ]
     },
@@ -71,16 +59,7 @@
       "pages": [
         "guides/pix-integration",
         "guides/webhook-handling",
-        "guides/queue-management",
         "guides/error-handling"
-      ]
-    },
-    {
-      "group": "SDKs",
-      "pages": [
-        "sdks/javascript",
-        "sdks/php",
-        "sdks/python"
       ]
     }
   ],
