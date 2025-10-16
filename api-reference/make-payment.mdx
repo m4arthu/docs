@@ -1,0 +1,181 @@
+---
+title: "POST /requestQrCode (Direct Payment)"
+description: "Make a direct PIX payment to a specific PIX key"
+---
+
+# POST /requestQrCode (Direct Payment)
+
+Make a direct PIX payment to a specific PIX key. This endpoint allows you to send money directly to a recipient's PIX key.
+
+## Request
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.braix.com.br/requestQrCode" \
+  -H "Authorization: Bearer your_access_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 10,
+    "pix_key": "user@example.com",
+    "withdrawaltype": "email",
+    "wallet": "user_wallet_123",
+    "webhookurl": "https://webhook-test.com/99fc09d1286656428b57d2ec2a520a98"
+  }'
+```
+</RequestExample>
+
+<CodeGroup>
+```javascript JavaScript
+const axios = require('axios');
+
+const makeDirectPayment = async (amount, pixKey, withdrawalType, wallet, webhookUrl) => {
+  const response = await axios.post('https://api.braix.com.br/requestQrCode', {
+    amount: amount,
+    pix_key: pixKey,
+    withdrawaltype: withdrawalType,
+    wallet: wallet,
+    webhookurl: webhookUrl
+  }, {
+    headers: {
+      'Authorization': `Bearer ${process.env.BRAIX_ACCESS_TOKEN}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  return response.data;
+};
+```
+
+```python Python
+import requests
+
+def make_direct_payment(amount, pix_key, withdrawal_type, wallet, webhook_url):
+    headers = {
+        'Authorization': f'Bearer {os.getenv("BRAIX_ACCESS_TOKEN")}',
+        'Content-Type': 'application/json'
+    }
+    
+    data = {
+        'amount': amount,
+        'pix_key': pix_key,
+        'withdrawaltype': withdrawal_type,
+        'wallet': wallet,
+        'webhookurl': webhook_url
+    }
+    
+    response = requests.post('https://api.braix.com.br/requestQrCode', 
+                           json=data, headers=headers)
+    return response.json()
+```
+
+```php PHP
+<?php
+function makeDirectPayment($amount, $pixKey, $withdrawalType, $wallet, $webhookUrl) {
+    $token = $_ENV['BRAIX_ACCESS_TOKEN'];
+    $data = [
+        'amount' => $amount,
+        'pix_key' => $pixKey,
+        'withdrawaltype' => $withdrawalType,
+        'wallet' => $wallet,
+        'webhookurl' => $webhookUrl
+    ];
+    
+    $context = stream_context_create([
+        'http' => [
+            'header' => [
+                'Authorization: Bearer ' . $token,
+                'Content-Type: application/json'
+            ],
+            'method' => 'POST',
+            'content' => json_encode($data)
+        ]
+    ]);
+    
+    $response = file_get_contents('https://api.braix.com.br/requestQrCode', false, $context);
+    return json_decode($response, true);
+}
+?>
+```
+</CodeGroup>
+
+## Request Body
+
+<ParamField query="amount" type="number" required>
+  The payment amount in BRL.
+</ParamField>
+
+<ParamField query="pix_key" type="string" required>
+  The recipient's PIX key (email, CPF, phone, or random key).
+</ParamField>
+
+<ParamField query="withdrawaltype" type="string" required>
+  The type of PIX key (email, cpf, phone, random).
+</ParamField>
+
+<ParamField query="wallet" type="string" required>
+  The wallet identifier for the transaction.
+</ParamField>
+
+<ParamField query="webhookurl" type="string" required>
+  The webhook URL to receive payment notifications.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "transactionId": "tx_123456789",
+  "amount": 10.00,
+  "pixKey": "user@example.com",
+  "endToEndId": "E12345678202407080309abc123",
+  "status": "processing",
+  "createdAt": "2024-01-15T10:30:00Z"
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+<ResponseField name="400 Bad Request" type="object">
+  Returned when PIX key is invalid or amount is invalid.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Invalid PIX key",
+      "error": "PIX key format is not valid"
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="401 Unauthorized" type="object">
+  Returned when authentication fails.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Unauthorized",
+      "error": "Invalid or expired token"
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="422 Unprocessable Entity" type="object">
+  Returned when wallet has insufficient funds.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Insufficient funds",
+      "error": "Wallet balance is insufficient for this transaction"
+    }
+    ```
+  </Expandable>
+</ResponseField>

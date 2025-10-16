@@ -1,0 +1,193 @@
+---
+title: "POST /requestQrCode (Split Payment)"
+description: "Generate a PIX QR Code with split payment functionality"
+---
+
+# POST /requestQrCode (Split Payment)
+
+Generate a PIX QR Code with split payment functionality. This allows you to divide the payment amount among multiple recipients.
+
+## Request
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.braix.com.br/requestQrCode" \
+  -H "Authorization: Bearer your_access_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 10,
+    "devedor": {
+      "cpf": "12345678901",
+      "name": "João Silva"
+    },
+    "splits": [
+      {
+        "username": "partner1",
+        "percentageSplit": "50"
+      }
+    ],
+    "webhookurl": "https://webhook-test.com/99fc09d1286656428b57d2ec2a520a98"
+  }'
+```
+</RequestExample>
+
+<CodeGroup>
+```javascript JavaScript
+const axios = require('axios');
+
+const generateQrCodeSplit = async (amount, devedor, splits, webhookUrl) => {
+  const response = await axios.post('https://api.braix.com.br/requestQrCode', {
+    amount: amount,
+    devedor: devedor,
+    splits: splits,
+    webhookurl: webhookUrl
+  }, {
+    headers: {
+      'Authorization': `Bearer ${process.env.BRAIX_ACCESS_TOKEN}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  return response.data;
+};
+```
+
+```python Python
+import requests
+
+def generate_qr_code_split(amount, devedor, splits, webhook_url):
+    headers = {
+        'Authorization': f'Bearer {os.getenv("BRAIX_ACCESS_TOKEN")}',
+        'Content-Type': 'application/json'
+    }
+    
+    data = {
+        'amount': amount,
+        'devedor': devedor,
+        'splits': splits,
+        'webhookurl': webhook_url
+    }
+    
+    response = requests.post('https://api.braix.com.br/requestQrCode', 
+                           json=data, headers=headers)
+    return response.json()
+```
+
+```php PHP
+<?php
+function generateQrCodeSplit($amount, $devedor, $splits, $webhookUrl) {
+    $token = $_ENV['BRAIX_ACCESS_TOKEN'];
+    $data = [
+        'amount' => $amount,
+        'devedor' => $devedor,
+        'splits' => $splits,
+        'webhookurl' => $webhookUrl
+    ];
+    
+    $context = stream_context_create([
+        'http' => [
+            'header' => [
+                'Authorization: Bearer ' . $token,
+                'Content-Type: application/json'
+            ],
+            'method' => 'POST',
+            'content' => json_encode($data)
+        ]
+    ]);
+    
+    $response = file_get_contents('https://api.braix.com.br/requestQrCode', false, $context);
+    return json_decode($response, true);
+}
+?>
+```
+</CodeGroup>
+
+## Request Body
+
+<ParamField query="amount" type="number" required>
+  The total payment amount in BRL.
+</ParamField>
+
+<ParamField query="devedor" type="object" required>
+  The debtor information.
+
+  <Expandable title="devedor object">
+    ```json
+    {
+      "cpf": "12345678901",
+      "name": "João Silva"
+    }
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="splits" type="array" required>
+  Array of split recipients.
+
+  <Expandable title="splits array">
+    ```json
+    [
+      {
+        "username": "partner1",
+        "percentageSplit": "50"
+      }
+    ]
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField query="webhookurl" type="string" required>
+  The webhook URL to receive payment notifications.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "qrCode": "00020126580014br.gov.bcb.pix0136123e4567-e89b-12d3-a456-426614174000520400005303986540510.005802BR5913Fulano de Tal6008Brasilia62070503***63041D3D",
+  "qrCodeImage": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
+  "transactionId": "tx_123456789",
+  "amount": 10.00,
+  "splits": [
+    {
+      "username": "partner1",
+      "percentageSplit": "50",
+      "amount": 5.00
+    }
+  ],
+  "status": "pending"
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+<ResponseField name="400 Bad Request" type="object">
+  Returned when split percentages don't add up to 100% or invalid parameters.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Invalid split configuration",
+      "error": "Split percentages must total 100%"
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="401 Unauthorized" type="object">
+  Returned when authentication fails.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Unauthorized",
+      "error": "Invalid or expired token"
+    }
+    ```
+  </Expandable>
+</ResponseField>

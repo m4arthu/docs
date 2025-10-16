@@ -1,0 +1,171 @@
+---
+title: "POST /api/checkTransactionStatus"
+description: "Check the status of a specific transaction"
+---
+
+# POST /api/checkTransactionStatus
+
+Check the status of a specific transaction using endToEndId and transaction ID.
+
+## Request
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.braix.com.br/api/checkTransactionStatus" \
+  -H "Authorization: Bearer your_access_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "endToEndId": "E12345678202407080309abc123",
+    "txId": "transaction-id-123"
+  }'
+```
+</RequestExample>
+
+<CodeGroup>
+```javascript JavaScript
+const axios = require('axios');
+
+const checkTransactionStatus = async (endToEndId, txId) => {
+  const response = await axios.post('https://api.braix.com.br/api/checkTransactionStatus', {
+    endToEndId: endToEndId,
+    txId: txId
+  }, {
+    headers: {
+      'Authorization': `Bearer ${process.env.BRAIX_ACCESS_TOKEN}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  return response.data;
+};
+```
+
+```python Python
+import requests
+
+def check_transaction_status(end_to_end_id, tx_id):
+    headers = {
+        'Authorization': f'Bearer {os.getenv("BRAIX_ACCESS_TOKEN")}',
+        'Content-Type': 'application/json'
+    }
+    
+    data = {
+        'endToEndId': end_to_end_id,
+        'txId': tx_id
+    }
+    
+    response = requests.post('https://api.braix.com.br/api/checkTransactionStatus', 
+                           json=data, headers=headers)
+    return response.json()
+```
+
+```php PHP
+<?php
+function checkTransactionStatus($endToEndId, $txId) {
+    $token = $_ENV['BRAIX_ACCESS_TOKEN'];
+    $data = [
+        'endToEndId' => $endToEndId,
+        'txId' => $txId
+    ];
+    
+    $context = stream_context_create([
+        'http' => [
+            'header' => [
+                'Authorization: Bearer ' . $token,
+                'Content-Type: application/json'
+            ],
+            'method' => 'POST',
+            'content' => json_encode($data)
+        ]
+    ]);
+    
+    $response = file_get_contents('https://api.braix.com.br/api/checkTransactionStatus', false, $context);
+    return json_decode($response, true);
+}
+?>
+```
+</CodeGroup>
+
+## Request Body
+
+<ParamField query="endToEndId" type="string" required>
+  The endToEndId of the PIX transaction.
+</ParamField>
+
+<ParamField query="txId" type="string" required>
+  The transaction ID.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "status": "completed",
+  "endToEndId": "E12345678202407080309abc123",
+  "txId": "transaction-id-123",
+  "amount": 10.00,
+  "timestamp": "2024-01-15T10:30:00Z",
+  "details": {
+    "payer": "João Silva",
+    "recipient": "Maria Santos",
+    "description": "Payment for services"
+  }
+}
+```
+</ResponseExample>
+
+## Transaction Status Values
+
+<AccordionGroup>
+<Accordion title="pending">
+  Transaction is waiting for payment confirmation.
+</Accordion>
+
+<Accordion title="processing">
+  Transaction is being processed by the payment system.
+</Accordion>
+
+<Accordion title="completed">
+  Transaction has been successfully completed.
+</Accordion>
+
+<Accordion title="failed">
+  Transaction failed due to an error.
+</Accordion>
+
+<Accordion title="cancelled">
+  Transaction was cancelled by the user or system.
+</Accordion>
+</AccordionGroup>
+
+## Error Responses
+
+<ResponseField name="404 Not Found" type="object">
+  Returned when the transaction is not found.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Transaction not found",
+      "error": "No transaction found with the provided identifiers"
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="401 Unauthorized" type="object">
+  Returned when authentication fails.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Unauthorized",
+      "error": "Invalid or expired token"
+    }
+    ```
+  </Expandable>
+</ResponseField>

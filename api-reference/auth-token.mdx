@@ -1,0 +1,120 @@
+---
+title: "POST /auth/token"
+description: "Obtain an access token using client credentials"
+---
+
+# POST /auth/token
+
+Obtain an access token using your client credentials for API authentication.
+
+## Request
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.braix.com.br/auth/token" \
+  -H "Authorization: Basic $(echo -n 'clientId:clientSecret' | base64)" \
+  -H "Content-Type: application/json"
+```
+</RequestExample>
+
+<CodeGroup>
+```javascript JavaScript
+const axios = require('axios');
+
+const getAccessToken = async () => {
+  const clientId = process.env.BRAIX_CLIENT_ID;
+  const clientSecret = process.env.BRAIX_CLIENT_SECRET;
+  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+  
+  const response = await axios.post('https://api.braix.com.br/auth/token', {}, {
+    headers: {
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  return response.data.access_token;
+};
+```
+
+```python Python
+import requests
+import base64
+import os
+
+def get_access_token():
+    client_id = os.getenv('BRAIX_CLIENT_ID')
+    client_secret = os.getenv('BRAIX_CLIENT_SECRET')
+    credentials = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
+    
+    response = requests.post('https://api.braix.com.br/auth/token', 
+                           headers={'Authorization': f'Basic {credentials}'})
+    return response.json()['access_token']
+```
+
+```php PHP
+<?php
+function getAccessToken() {
+    $clientId = $_ENV['BRAIX_CLIENT_ID'];
+    $clientSecret = $_ENV['BRAIX_CLIENT_SECRET'];
+    $credentials = base64_encode($clientId . ':' . $clientSecret);
+    
+    $context = stream_context_create([
+        'http' => [
+            'header' => [
+                'Authorization: Basic ' . $credentials,
+                'Content-Type: application/json'
+            ],
+            'method' => 'POST'
+        ]
+    ]);
+    
+    $response = file_get_contents('https://api.braix.com.br/auth/token', false, $context);
+    $data = json_decode($response, true);
+    return $data['access_token'];
+}
+?>
+```
+</CodeGroup>
+
+## Response
+
+<ResponseExample>
+```json Success
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+  "token_type": "Bearer",
+  "expires_in": 3600
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+<ResponseField name="401 Unauthorized" type="object">
+  Returned when client credentials are invalid.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Unauthorized",
+      "error": "Invalid client credentials"
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="400 Bad Request" type="object">
+  Returned when the request is malformed.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Bad Request",
+      "error": "Missing or invalid parameters"
+    }
+    ```
+  </Expandable>
+</ResponseField>

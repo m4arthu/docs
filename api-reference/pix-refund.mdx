@@ -1,0 +1,162 @@
+---
+title: "PUT /pix/{endToEndId}/devolucao"
+description: "Refund a PIX transaction"
+---
+
+# PUT /pix/{endToEndId}/devolucao
+
+Refund a PIX transaction using the endToEndId. This endpoint allows you to process refunds for completed PIX transactions.
+
+## Request
+
+<RequestExample>
+```bash cURL
+curl -X PUT "https://api.braix.com.br/pix/E60701190202509291927DY5IHAXSHJX/devolucao" \
+  -H "Authorization: Bearer your_access_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "endToEndId": "E60701190202509291927DY5IHAXSHJX",
+    "valor": "1.0"
+  }'
+```
+</RequestExample>
+
+<CodeGroup>
+```javascript JavaScript
+const axios = require('axios');
+
+const refundPixTransaction = async (endToEndId, valor) => {
+  const response = await axios.put(`https://api.braix.com.br/pix/${endToEndId}/devolucao`, {
+    endToEndId: endToEndId,
+    valor: valor
+  }, {
+    headers: {
+      'Authorization': `Bearer ${process.env.BRAIX_ACCESS_TOKEN}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  return response.data;
+};
+```
+
+```python Python
+import requests
+
+def refund_pix_transaction(end_to_end_id, valor):
+    headers = {
+        'Authorization': f'Bearer {os.getenv("BRAIX_ACCESS_TOKEN")}',
+        'Content-Type': 'application/json'
+    }
+    
+    data = {
+        'endToEndId': end_to_end_id,
+        'valor': valor
+    }
+    
+    response = requests.put(f'https://api.braix.com.br/pix/{end_to_end_id}/devolucao', 
+                           json=data, headers=headers)
+    return response.json()
+```
+
+```php PHP
+<?php
+function refundPixTransaction($endToEndId, $valor) {
+    $token = $_ENV['BRAIX_ACCESS_TOKEN'];
+    $data = [
+        'endToEndId' => $endToEndId,
+        'valor' => $valor
+    ];
+    
+    $context = stream_context_create([
+        'http' => [
+            'header' => [
+                'Authorization: Bearer ' . $token,
+                'Content-Type: application/json'
+            ],
+            'method' => 'PUT',
+            'content' => json_encode($data)
+        ]
+    ]);
+    
+    $response = file_get_contents("https://api.braix.com.br/pix/{$endToEndId}/devolucao", false, $context);
+    return json_decode($response, true);
+}
+?>
+```
+</CodeGroup>
+
+## Path Parameters
+
+<ParamField path="endToEndId" type="string" required>
+  The endToEndId of the PIX transaction to refund.
+</ParamField>
+
+## Request Body
+
+<ParamField query="endToEndId" type="string" required>
+  The endToEndId of the transaction to refund.
+</ParamField>
+
+<ParamField query="valor" type="string" required>
+  The refund amount in BRL (as string).
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "refundId": "refund_123456789",
+  "endToEndId": "E60701190202509291927DY5IHAXSHJX",
+  "valor": "1.0",
+  "status": "processing",
+  "createdAt": "2024-01-15T10:30:00Z"
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+<ResponseField name="400 Bad Request" type="object">
+  Returned when the refund amount exceeds the original transaction amount.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Invalid refund amount",
+      "error": "Refund amount cannot exceed original transaction amount"
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="404 Not Found" type="object">
+  Returned when the transaction is not found.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Transaction not found",
+      "error": "No transaction found with the provided endToEndId"
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="422 Unprocessable Entity" type="object">
+  Returned when the transaction cannot be refunded.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Transaction cannot be refunded",
+      "error": "Transaction is not in a refundable state"
+    }
+    ```
+  </Expandable>
+</ResponseField>

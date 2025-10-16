@@ -1,0 +1,165 @@
+---
+title: "POST /api/checkMedStatus"
+description: "Check the status of a specific transaction using endToEndId"
+---
+
+# POST /api/checkMedStatus
+
+Check the status of a specific transaction using only the endToEndId. This is a simplified version of the status check endpoint.
+
+## Request
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.braix.com.br/api/checkMedStatus" \
+  -H "Authorization: Bearer your_access_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "endToEndId": "E80959612202503150147jvDxuUqffRgdddddd"
+  }'
+```
+</RequestExample>
+
+<CodeGroup>
+```javascript JavaScript
+const axios = require('axios');
+
+const checkMedStatus = async (endToEndId) => {
+  const response = await axios.post('https://api.braix.com.br/api/checkMedStatus', {
+    endToEndId: endToEndId
+  }, {
+    headers: {
+      'Authorization': `Bearer ${process.env.BRAIX_ACCESS_TOKEN}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  return response.data;
+};
+```
+
+```python Python
+import requests
+
+def check_med_status(end_to_end_id):
+    headers = {
+        'Authorization': f'Bearer {os.getenv("BRAIX_ACCESS_TOKEN")}',
+        'Content-Type': 'application/json'
+    }
+    
+    data = {
+        'endToEndId': end_to_end_id
+    }
+    
+    response = requests.post('https://api.braix.com.br/api/checkMedStatus', 
+                           json=data, headers=headers)
+    return response.json()
+```
+
+```php PHP
+<?php
+function checkMedStatus($endToEndId) {
+    $token = $_ENV['BRAIX_ACCESS_TOKEN'];
+    $data = [
+        'endToEndId' => $endToEndId
+    ];
+    
+    $context = stream_context_create([
+        'http' => [
+            'header' => [
+                'Authorization: Bearer ' . $token,
+                'Content-Type: application/json'
+            ],
+            'method' => 'POST',
+            'content' => json_encode($data)
+        ]
+    ]);
+    
+    $response = file_get_contents('https://api.braix.com.br/api/checkMedStatus', false, $context);
+    return json_decode($response, true);
+}
+?>
+```
+</CodeGroup>
+
+## Request Body
+
+<ParamField query="endToEndId" type="string" required>
+  The endToEndId of the PIX transaction to check.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "status": "completed",
+  "endToEndId": "E80959612202503150147jvDxuUqffRgdddddd",
+  "amount": 10.00,
+  "timestamp": "2024-01-15T10:30:00Z",
+  "payer": {
+    "name": "João Silva",
+    "cpf": "12345678901"
+  },
+  "recipient": {
+    "name": "Maria Santos",
+    "pixKey": "maria@example.com"
+  }
+}
+```
+</ResponseExample>
+
+## Transaction Status Values
+
+<AccordionGroup>
+<Accordion title="pending">
+  Transaction is waiting for payment confirmation.
+</Accordion>
+
+<Accordion title="processing">
+  Transaction is being processed by the payment system.
+</Accordion>
+
+<Accordion title="completed">
+  Transaction has been successfully completed.
+</Accordion>
+
+<Accordion title="failed">
+  Transaction failed due to an error.
+</Accordion>
+
+<Accordion title="cancelled">
+  Transaction was cancelled by the user or system.
+</Accordion>
+</AccordionGroup>
+
+## Error Responses
+
+<ResponseField name="404 Not Found" type="object">
+  Returned when the transaction is not found.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Transaction not found",
+      "error": "No transaction found with the provided endToEndId"
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="401 Unauthorized" type="object">
+  Returned when authentication fails.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Unauthorized",
+      "error": "Invalid or expired token"
+    }
+    ```
+  </Expandable>
+</ResponseField>

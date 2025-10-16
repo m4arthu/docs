@@ -1,0 +1,211 @@
+---
+title: "POST /api/pix/export"
+description: "Export PIX transaction reports in various formats"
+---
+
+# POST /api/pix/export
+
+Export PIX transaction reports in various formats (JSON, CSV, PDF) with filtering options.
+
+## Request
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.braix.com.br/api/pix/export" \
+  -H "Authorization: Bearer your_access_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "both",
+    "format": "json",
+    "page": 1,
+    "perPage": 100,
+    "startDate": "2024-01-01T00:00:00Z",
+    "endDate": "2024-12-31T23:59:59Z",
+    "status": 1,
+    "gateway": "treeal"
+  }'
+```
+</RequestExample>
+
+<CodeGroup>
+```javascript JavaScript
+const axios = require('axios');
+
+const exportPixReport = async (filters) => {
+  const response = await axios.post('https://api.braix.com.br/api/pix/export', filters, {
+    headers: {
+      'Authorization': `Bearer ${process.env.BRAIX_ACCESS_TOKEN}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  return response.data;
+};
+```
+
+```python Python
+import requests
+
+def export_pix_report(filters):
+    headers = {
+        'Authorization': f'Bearer {os.getenv("BRAIX_ACCESS_TOKEN")}',
+        'Content-Type': 'application/json'
+    }
+    
+    response = requests.post('https://api.braix.com.br/api/pix/export', 
+                           json=filters, headers=headers)
+    return response.json()
+```
+
+```php PHP
+<?php
+function exportPixReport($filters) {
+    $token = $_ENV['BRAIX_ACCESS_TOKEN'];
+    
+    $context = stream_context_create([
+        'http' => [
+            'header' => [
+                'Authorization: Bearer ' . $token,
+                'Content-Type: application/json'
+            ],
+            'method' => 'POST',
+            'content' => json_encode($filters)
+        ]
+    ]);
+    
+    $response = file_get_contents('https://api.braix.com.br/api/pix/export', false, $context);
+    return json_decode($response, true);
+}
+?>
+```
+</CodeGroup>
+
+## Request Body
+
+<ParamField query="type" type="string" required>
+  The type of transactions to export. Options: "in", "out", "both".
+</ParamField>
+
+<ParamField query="format" type="string" required>
+  The export format. Options: "json", "csv", "pdf".
+</ParamField>
+
+<ParamField query="page" type="number">
+  The page number for pagination (default: 1).
+</ParamField>
+
+<ParamField query="perPage" type="number">
+  Number of records per page (default: 100, max: 1000).
+</ParamField>
+
+<ParamField query="startDate" type="string" required>
+  Start date for the report in ISO 8601 format.
+</ParamField>
+
+<ParamField query="endDate" type="string" required>
+  End date for the report in ISO 8601 format.
+</ParamField>
+
+<ParamField query="status" type="number">
+  Filter by transaction status (1: completed, 2: pending, 3: failed).
+</ParamField>
+
+<ParamField query="gateway" type="string">
+  Filter by payment gateway (e.g., "treeal").
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "data": [
+    {
+      "id": "tx_123456789",
+      "endToEndId": "E12345678202407080309abc123",
+      "amount": 10.00,
+      "status": "completed",
+      "type": "in",
+      "payer": "João Silva",
+      "recipient": "Maria Santos",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "gateway": "treeal"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "perPage": 100,
+    "total": 1,
+    "totalPages": 1
+  },
+  "summary": {
+    "totalAmount": 10.00,
+    "totalTransactions": 1,
+    "completedTransactions": 1,
+    "pendingTransactions": 0,
+    "failedTransactions": 0
+  }
+}
+```
+</ResponseExample>
+
+## Export Formats
+
+<AccordionGroup>
+<Accordion title="JSON">
+  Returns data in JSON format with full transaction details and metadata.
+</Accordion>
+
+<Accordion title="CSV">
+  Returns data in CSV format suitable for spreadsheet applications.
+</Accordion>
+
+<Accordion title="PDF">
+  Returns a formatted PDF report with charts and summaries.
+</Accordion>
+</AccordionGroup>
+
+## Error Responses
+
+<ResponseField name="400 Bad Request" type="object">
+  Returned when date range or parameters are invalid.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Invalid date range",
+      "error": "Start date must be before end date"
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="401 Unauthorized" type="object">
+  Returned when authentication fails.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Unauthorized",
+      "error": "Invalid or expired token"
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="429 Too Many Requests" type="object">
+  Returned when too many export requests are made.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Too many requests",
+      "error": "Export rate limit exceeded"
+    }
+    ```
+  </Expandable>
+</ResponseField>
