@@ -3,9 +3,7 @@ title: "API Endpoints"
 description: "Complete reference for all Braix API endpoints"
 ---
 
-# API Endpoints
 
-This section provides a complete reference for all available endpoints in the Braix API.
 
 ## Authentication
 
@@ -13,13 +11,10 @@ This section provides a complete reference for all available endpoints in the Br
 
 Obtain an access token using your client credentials.
 
-<RequestExample>
-```bash cURL
-curl -X POST "https://api.braix.com.br/auth/token" \
-  -H "Authorization: Basic $(echo -n 'clientId:clientSecret' | base64)" \
-  -H "Content-Type: application/json"
-```
-</RequestExample>
+<Card title="View Full Documentation" icon="external-link" href="/api-reference/auth-token">
+  Complete documentation with examples and error responses
+</Card>
+
 
 <ResponseExample>
 ```json Success
@@ -37,17 +32,10 @@ curl -X POST "https://api.braix.com.br/auth/token" \
 
 Generate a PIX QR Code for payment collection.
 
-<RequestExample>
-```bash cURL
-curl -X POST "https://api.braix.com.br/requestQrCode" \
-  -H "Authorization: Bearer your_access_token" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "amount": 10,
-    "webhookurl": "https://webhook-test.com/99fc09d1286656428b57d2ec2a520a98"
-  }'
-```
-</RequestExample>
+<Card title="View Full Documentation" icon="external-link" href="/api-reference/request-qrcode">
+  Complete documentation with examples and error responses
+</Card>
+
 
 <ResponseExample>
 ```json Success
@@ -64,62 +52,28 @@ curl -X POST "https://api.braix.com.br/requestQrCode" \
 
 Generate a PIX QR Code with split payment functionality.
 
-<RequestExample>
-```bash cURL
-curl -X POST "https://api.braix.com.br/requestQrCode" \
-  -H "Authorization: Bearer your_access_token" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "amount": 10,
-    "devedor": {
-      "cpf": "12345678901",
-      "name": "João Silva"
-    },
-    "splits": [
-      {
-        "username": "partner1",
-        "percentageSplit": "50"
-      }
-    ],
-    "webhookurl": "https://webhook-test.com/99fc09d1286656428b57d2ec2a520a98"
-  }'
-```
-</RequestExample>
+<Card title="View Full Documentation" icon="external-link" href="/api-reference/request-qrcode-split">
+  Complete documentation with examples and error responses
+</Card>
+
 
 ### POST /requestQrCode (Direct Payment)
 
 Make a direct PIX payment to a specific PIX key.
 
-<RequestExample>
-```bash cURL
-curl -X POST "https://api.braix.com.br/requestQrCode" \
-  -H "Authorization: Bearer your_access_token" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "amount": 10,
-    "pix_key": "user@example.com",
-    "withdrawaltype": "email",
-    "wallet": "user_wallet_123",
-    "webhookurl": "https://webhook-test.com/99fc09d1286656428b57d2ec2a520a98"
-  }'
-```
-</RequestExample>
+<Card title="View Full Documentation" icon="external-link" href="/api-reference/make-payment">
+  Complete documentation with examples and error responses
+</Card>
+
 
 ### PUT /pix/{endToEndId}/devolucao
 
 Refund a PIX transaction.
 
-<RequestExample>
-```bash cURL
-curl -X PUT "https://api.braix.com.br/pix/E60701190202509291927DY5IHAXSHJX/devolucao" \
-  -H "Authorization: Bearer your_access_token" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "endToEndId": "E60701190202509291927DY5IHAXSHJX",
-    "valor": "1.0"
-  }'
-```
-</RequestExample>
+<Card title="View Full Documentation" icon="external-link" href="/api-reference/pix-refund">
+  Complete documentation with examples and error responses
+</Card>
+
 
 <ResponseExample>
 ```json Success
@@ -137,17 +91,10 @@ curl -X PUT "https://api.braix.com.br/pix/E60701190202509291927DY5IHAXSHJX/devol
 
 Check the status of a specific transaction.
 
-<RequestExample>
-```bash cURL
-curl -X POST "https://api.braix.com.br/api/checkTransactionStatus" \
-  -H "Authorization: Bearer your_access_token" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "endToEndId": "E12345678202407080309abc123",
-    "txId": "transaction-id-123"
-  }'
-```
-</RequestExample>
+<Card title="View Full Documentation" icon="external-link" href="/api-reference/check-transaction-status">
+  Complete documentation with examples and error responses
+</Card>
+
 
 <ResponseExample>
 ```json Success
@@ -164,16 +111,10 @@ curl -X POST "https://api.braix.com.br/api/checkTransactionStatus" \
 
 Check the status of a specific transaction using endToEndId.
 
-<RequestExample>
-```bash cURL
-curl -X POST "https://api.braix.com.br/api/checkMedStatus" \
-  -H "Authorization: Bearer your_access_token" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "endToEndId": "E80959612202503150147jvDxuUqffRgdddddd"
-  }'
-```
-</RequestExample>
+<Card title="View Full Documentation" icon="external-link" href="/api-reference/check-med-status">
+  Complete documentation with examples and error responses
+</Card>
+
 
 <ResponseExample>
 ```json Success
@@ -192,23 +133,10 @@ curl -X POST "https://api.braix.com.br/api/checkMedStatus" \
 
 Export PIX transaction reports in various formats.
 
-<RequestExample>
-```bash cURL
-curl -X POST "https://api.braix.com.br/api/pix/export" \
-  -H "Authorization: Bearer your_access_token" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "both",
-    "format": "json",
-    "page": 1,
-    "perPage": 100,
-    "startDate": "2024-01-01T00:00:00Z",
-    "endDate": "2024-12-31T23:59:59Z",
-    "status": 1,
-    "gateway": "treeal"
-  }'
-```
-</RequestExample>
+<Card title="View Full Documentation" icon="external-link" href="/api-reference/pix-export">
+  Complete documentation with examples and error responses
+</Card>
+
 
 <ResponseExample>
 ```json Success
@@ -237,12 +165,10 @@ curl -X POST "https://api.braix.com.br/api/pix/export" \
 
 Get the current balance of a user.
 
-<RequestExample>
-```bash cURL
-curl -X GET "https://api.braix.com.br/api/getUserBalance" \
-  -H "Authorization: Bearer your_access_token"
-```
-</RequestExample>
+<Card title="View Full Documentation" icon="external-link" href="/api-reference/get-user-balance">
+  Complete documentation with examples and error responses
+</Card>
+
 
 <ResponseExample>
 ```json Success
