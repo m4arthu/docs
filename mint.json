@@ -7,24 +7,12 @@
   },
   "favicon": "https://api.braix.com.br/assets/icon.png",
   "colors": {
-    "primary": "#ffffff",
-    "light": "#f5f5f5",
+    "primary": "#1a1a1a",
+    "light": "#2d2d2d",
     "dark": "#000000",
     "anchors": {
-      "from": "#ffffff",
-      "to": "#e0e0e0"
-    },
-    "background": {
-      "light": "#ffffff",
-      "dark": "#0a0a0a"
-    },
-    "text": {
-      "light": "#1a1a1a",
-      "dark": "#ffffff"
-    },
-    "accent": {
-      "light": "#f0f0f0",
-      "dark": "#2a2a2a"
+      "from": "#1a1a1a",
+      "to": "#404040"
     }
   },
   "topbarLinks": [
@@ -47,6 +35,7 @@
       "url": "guides"
     }
   ],
+
   "navigation": [
     {
       "group": "Get Started",
