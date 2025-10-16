@@ -11,20 +11,10 @@ description: "Complete reference for all Braix API endpoints"
 
 Obtain an access token using your client credentials.
 
-<Card title="View Full Documentation" icon="external-link" href="/api-reference/auth-token">
-  Complete documentation with examples and error responses
+<Card title="Ver Detalhes do Endpoint" icon="external-link" href="/api-reference/auth-token">
+  Acesse a documentação completa deste endpoint específico
 </Card>
 
-
-<ResponseExample>
-```json Success
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "Bearer",
-  "expires_in": 3600
-}
-```
-</ResponseExample>
 
 ## PIX Operations
 
@@ -32,28 +22,18 @@ Obtain an access token using your client credentials.
 
 Generate a PIX QR Code for payment collection.
 
-<Card title="View Full Documentation" icon="external-link" href="/api-reference/request-qrcode">
-  Complete documentation with examples and error responses
+<Card title="Ver Detalhes do Endpoint" icon="external-link" href="/api-reference/request-qrcode">
+  Acesse a documentação completa deste endpoint específico
 </Card>
 
 
-<ResponseExample>
-```json Success
-{
-  "success": true,
-  "qrCode": "00020126580014br.gov.bcb.pix...",
-  "qrCodeImage": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
-  "transactionId": "tx_123456789"
-}
-```
-</ResponseExample>
 
 ### POST /requestQrCode (Split Payment)
 
 Generate a PIX QR Code with split payment functionality.
 
-<Card title="View Full Documentation" icon="external-link" href="/api-reference/request-qrcode-split">
-  Complete documentation with examples and error responses
+<Card title="Ver Detalhes do Endpoint" icon="external-link" href="/api-reference/request-qrcode-split">
+  Acesse a documentação completa deste endpoint específico
 </Card>
 
 
@@ -61,8 +41,8 @@ Generate a PIX QR Code with split payment functionality.
 
 Make a direct PIX payment to a specific PIX key.
 
-<Card title="View Full Documentation" icon="external-link" href="/api-reference/make-payment">
-  Complete documentation with examples and error responses
+<Card title="Ver Detalhes do Endpoint" icon="external-link" href="/api-reference/make-payment">
+  Acesse a documentação completa deste endpoint específico
 </Card>
 
 
@@ -70,20 +50,9 @@ Make a direct PIX payment to a specific PIX key.
 
 Refund a PIX transaction.
 
-<Card title="View Full Documentation" icon="external-link" href="/api-reference/pix-refund">
-  Complete documentation with examples and error responses
+<Card title="Ver Detalhes do Endpoint" icon="external-link" href="/api-reference/pix-refund">
+  Acesse a documentação completa deste endpoint específico
 </Card>
-
-
-<ResponseExample>
-```json Success
-{
-  "success": true,
-  "refundId": "refund_123456789",
-  "status": "processing"
-}
-```
-</ResponseExample>
 
 ## Transaction Management
 
@@ -91,41 +60,17 @@ Refund a PIX transaction.
 
 Check the status of a specific transaction.
 
-<Card title="View Full Documentation" icon="external-link" href="/api-reference/check-transaction-status">
-  Complete documentation with examples and error responses
+<Card title="Ver Detalhes do Endpoint" icon="external-link" href="/api-reference/check-transaction-status">
+  Acesse a documentação completa deste endpoint específico
 </Card>
-
-
-<ResponseExample>
-```json Success
-{
-  "success": true,
-  "status": "completed",
-  "amount": 10.00,
-  "timestamp": "2024-01-15T10:30:00Z"
-}
-```
-</ResponseExample>
 
 ### POST /api/checkMedStatus
 
 Check the status of a specific transaction using endToEndId.
 
-<Card title="View Full Documentation" icon="external-link" href="/api-reference/check-med-status">
-  Complete documentation with examples and error responses
+<Card title="Ver Detalhes do Endpoint" icon="external-link" href="/api-reference/check-med-status">
+  Acesse a documentação completa deste endpoint específico
 </Card>
-
-
-<ResponseExample>
-```json Success
-{
-  "success": true,
-  "status": "completed",
-  "endToEndId": "E80959612202503150147jvDxuUqffRgdddddd",
-  "amount": 10.00
-}
-```
-</ResponseExample>
 
 ## Reports and Analytics
 
@@ -133,31 +78,9 @@ Check the status of a specific transaction using endToEndId.
 
 Export PIX transaction reports in various formats.
 
-<Card title="View Full Documentation" icon="external-link" href="/api-reference/pix-export">
-  Complete documentation with examples and error responses
+<Card title="Ver Detalhes do Endpoint" icon="external-link" href="/api-reference/pix-export">
+  Acesse a documentação completa deste endpoint específico
 </Card>
-
-
-<ResponseExample>
-```json Success
-{
-  "success": true,
-  "data": [
-    {
-      "id": "tx_123456789",
-      "amount": 10.00,
-      "status": "completed",
-      "createdAt": "2024-01-15T10:30:00Z"
-    }
-  ],
-  "pagination": {
-    "page": 1,
-    "perPage": 100,
-    "total": 1
-  }
-}
-```
-</ResponseExample>
 
 ## User Management
 
@@ -165,21 +88,9 @@ Export PIX transaction reports in various formats.
 
 Get the current balance of a user.
 
-<Card title="View Full Documentation" icon="external-link" href="/api-reference/get-user-balance">
-  Complete documentation with examples and error responses
+<Card title="Ver Detalhes do Endpoint" icon="external-link" href="/api-reference/get-user-balance">
+  Acesse a documentação completa deste endpoint específico
 </Card>
-
-
-<ResponseExample>
-```json Success
-{
-  "success": true,
-  "balance": 1500.50,
-  "currency": "BRL",
-  "lastUpdated": "2024-01-15T10:30:00Z"
-}
-```
-</ResponseExample>
 
 ## Error Responses
 
