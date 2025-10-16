@@ -2,88 +2,88 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "braix API",
   "logo": {
-      "dark": "https://api.braix.com.br/assets/icon.png",
-      "light": "https://api.braix.com.br/assets/icon.png"
+    "dark": "https://api.braix.com.br/assets/icon.png",
+    "light": "https://api.braix.com.br/assets/icon.png"
   },
   "favicon": "/favicon.png",
   "colors": {
-      "primary": "#ffffff",
-      "light": "#f5f5f5",
-      "dark": "#000000",
-      "anchors": {
-          "from": "#ffffff",
-          "to": "#e0e0e0"
-      },
-      "background": {
-          "light": "#ffffff",
-          "dark": "#0a0a0a"
-      },
-      "text": {
-          "light": "#1a1a1a",
-          "dark": "#ffffff"
-      },
-      "accent": {
-          "light": "#f0f0f0",
-          "dark": "#2a2a2a"
-      }
+    "primary": "#ffffff",
+    "light": "#f5f5f5",
+    "dark": "#000000",
+    "anchors": {
+      "from": "#ffffff",
+      "to": "#e0e0e0"
+    },
+    "background": {
+      "light": "#ffffff",
+      "dark": "#0a0a0a"
+    },
+    "text": {
+      "light": "#1a1a1a",
+      "dark": "#ffffff"
+    },
+    "accent": {
+      "light": "#f0f0f0",
+      "dark": "#2a2a2a"
+    }
   },
   "topbarLinks": [
-      {
-          "name": "Support",
-          "url": "mailto:support@braix.com"
-      }
+    {
+      "name": "Support",
+      "url": "mailto:support@braix.com"
+    }
   ],
   "topbarCtaButton": {
-      "name": "Dashboard",
-      "url": "https://dashboard.braix.com.br"
+    "name": "Dashboard",
+    "url": "https://dashboard.braix.com.br"
   },
   "tabs": [
-      {
-          "name": "API Reference",
-          "url": "api-reference"
-      },
-      {
-          "name": "Guides",
-          "url": "guides"
-      }
+    {
+      "name": "API Reference",
+      "url": "api-reference"
+    },
+    {
+      "name": "Guides",
+      "url": "guides"
+    }
   ],
   "navigation": [
-      {
-          "group": "Get Started",
-          "pages": [
-              "introduction",
-              "quickstart",
-              "authentication"
-          ]
-      },
-      {
-          "group": "API Reference",
-          "pages": [
-              "api-reference/endpoints",
-              "api-reference/auth-token",
-              "api-reference/request-qrcode",
-              "api-reference/request-qrcode-split",
-              "api-reference/make-payment",
-              "api-reference/pix-refund",
-              "api-reference/check-transaction-status",
-              "api-reference/check-med-status",
-              "api-reference/pix-export",
-              "api-reference/get-user-balance",
-              "api-reference/webhooks"
-          ]
-      },
-      {
-          "group": "Guides",
-          "pages": [
-              "guides/pix-integration",
-              "guides/webhook-handling",
-              "guides/error-handling"
-          ]
-      }
+    {
+      "group": "Get Started",
+      "pages": [
+        "introduction",
+        "quickstart",
+        "authentication"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "api-reference/endpoints",
+        "api-reference/auth-token",
+        "api-reference/request-qrcode",
+        "api-reference/request-qrcode-split",
+        "api-reference/make-payment",
+        "api-reference/pix-refund",
+        "api-reference/check-transaction-status",
+        "api-reference/check-med-status",
+        "api-reference/pix-export",
+        "api-reference/get-user-balance",
+        "api-reference/webhooks"
+      ]
+    },
+    {
+      "group": "Guides",
+      "pages": [
+        "guides/pix-integration",
+        "guides/webhook-handling",
+        "guides/error-handling"
+      ]
+    }
   ],
   "footerSocials": {
-      "twitter": "https://twitter.com/braix",
-      "github": "https://github.com/braix",
-      "linkedin": "https://linkedin.com/company/braix"
+    "twitter": "https://twitter.com/braix",
+    "github": "https://github.com/braix",
+    "linkedin": "https://linkedin.com/company/braix"
   }
 }
