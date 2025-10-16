@@ -48,6 +48,7 @@
     {
       "group": "API Reference",
       "pages": [
+        "api-reference/endpoints",
         "api-reference/pix",
         "api-reference/transactions",
         "api-reference/webhooks"
