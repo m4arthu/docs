@@ -41,118 +41,185 @@ composer require guzzlehttp/guzzle
 Create a `.env` file with your braix credentials:
 
 ```bash .env
-braix_API_KEY=your_api_key_here
-braix_BASE_URL=https://api.braix.com.br
-braix_WEBHOOK_URL=https://your-domain.com/webhooks/braix
+BRAIX_CLIENT_ID=your_client_id_here
+BRAIX_CLIENT_SECRET=your_client_secret_here
+BRAIX_BASE_URL=https://api.braix.com.br
+BRAIX_WEBHOOK_URL=https://your-domain.com/webhooks/braix
 ```
 
 <Warning>
 Never commit your API keys to version control. Use environment variables or secure configuration management.
 </Warning>
 
-## Step 3: Make Your First API Call
+## Step 3: Get Access Token
 
-Let's create a simple PIX payment request:
+First, you need to obtain an access token using your client credentials:
 
 <CodeGroup>
 ```javascript Node.js
 const axios = require('axios');
 
-const createPixPayment = async () => {
-  try {
-    const response = await axios.post('https://api.braix.com.br/requestPayment', {
-      amount: 10.50,
-      pixKey: 'user@example.com',
-      webhookUrl: 'https://your-domain.com/webhooks/braix',
-      externalId: 'order_123',
-      gateway: 'woovi',
-      description: 'Payment for order #123'
-    }, {
-      headers: {
-        'Authorization': `Bearer ${process.env.braix_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    console.log('Payment created:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Error creating payment:', error.response?.data || error.message);
-  }
+const getAccessToken = async () => {
+  const clientId = process.env.BRAIX_CLIENT_ID;
+  const clientSecret = process.env.BRAIX_CLIENT_SECRET;
+  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+  
+  const response = await axios.post('https://api.braix.com.br/auth/token', {}, {
+    headers: {
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  return response.data.access_token;
 };
-
-createPixPayment();
 ```
 
 ```python Python
 import requests
+import base64
 import os
 
-def create_pix_payment():
-    url = 'https://api.braix.com.br/requestPayment'
-    headers = {
-        'Authorization': f'Bearer {os.getenv("braix_API_KEY")}',
-        'Content-Type': 'application/json'
-    }
-    data = {
-        'amount': 10.50,
-        'pixKey': 'user@example.com',
-        'webhookUrl': 'https://your-domain.com/webhooks/braix',
-        'externalId': 'order_123',
-        'gateway': 'woovi',
-        'description': 'Payment for order #123'
-    }
+def get_access_token():
+    client_id = os.getenv('BRAIX_CLIENT_ID')
+    client_secret = os.getenv('BRAIX_CLIENT_SECRET')
+    credentials = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
     
-    try:
-        response = requests.post(url, json=data, headers=headers)
-        response.raise_for_status()
-        print('Payment created:', response.json())
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print('Error creating payment:', e)
-        return None
-
-create_pix_payment()
+    response = requests.post('https://api.braix.com.br/auth/token', 
+                           headers={'Authorization': f'Basic {credentials}'})
+    return response.json()['access_token']
 ```
 
 ```php PHP
 <?php
-$apiKey = $_ENV['braix_API_KEY'];
-$url = 'https://api.braix.com.br/requestPayment';
-
-$data = [
-    'amount' => 10.50,
-    'pixKey' => 'user@example.com',
-    'webhookUrl' => 'https://your-domain.com/webhooks/braix',
-    'externalId' => 'order_123',
-    'gateway' => 'woovi',
-    'description' => 'Payment for order #123'
-];
-
-$options = [
-    'http' => [
-        'header' => [
-            'Authorization: Bearer ' . $apiKey,
-            'Content-Type: application/json'
-        ],
-        'method' => 'POST',
-        'content' => json_encode($data)
-    ]
-];
-
-$context = stream_context_create($options);
-$result = file_get_contents($url, false, $context);
-
-if ($result === FALSE) {
-    echo 'Error creating payment';
-} else {
-    echo 'Payment created: ' . $result;
+function getAccessToken() {
+    $clientId = $_ENV['BRAIX_CLIENT_ID'];
+    $clientSecret = $_ENV['BRAIX_CLIENT_SECRET'];
+    $credentials = base64_encode($clientId . ':' . $clientSecret);
+    
+    $context = stream_context_create([
+        'http' => [
+            'header' => [
+                'Authorization: Basic ' . $credentials,
+                'Content-Type: application/json'
+            ],
+            'method' => 'POST'
+        ]
+    ]);
+    
+    $response = file_get_contents('https://api.braix.com.br/auth/token', false, $context);
+    $data = json_decode($response, true);
+    return $data['access_token'];
 }
 ?>
 ```
 </CodeGroup>
 
-## Step 4: Handle Webhooks
+## Step 4: Make Your First API Call
+
+Now let's create a PIX QR Code using the access token:
+
+<CodeGroup>
+```javascript Node.js
+const axios = require('axios');
+
+const createPixQrCode = async () => {
+  try {
+    // First get the access token
+    const token = await getAccessToken();
+    
+    // Then make the API call with Bearer token
+    const response = await axios.post('https://api.braix.com.br/requestQrCode', {
+      amount: 10.50,
+      webhookurl: 'https://your-domain.com/webhooks/braix'
+    }, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('QR Code created:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating QR Code:', error.response?.data || error.message);
+  }
+};
+
+createPixQrCode();
+```
+
+```python Python
+import requests
+import base64
+import os
+
+def create_pix_qr_code():
+    # First get the access token
+    token = get_access_token()
+    
+    # Then make the API call with Bearer token
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+    
+    data = {
+        'amount': 10.50,
+        'webhookurl': 'https://your-domain.com/webhooks/braix'
+    }
+    
+    try:
+        response = requests.post('https://api.braix.com.br/requestQrCode', 
+                               json=data, headers=headers)
+        response.raise_for_status()
+        print('QR Code created:', response.json())
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print('Error creating QR Code:', e)
+        return None
+
+create_pix_qr_code()
+```
+
+```php PHP
+<?php
+function createPixQrCode() {
+    // First get the access token
+    $token = getAccessToken();
+    
+    // Then make the API call with Bearer token
+    $data = [
+        'amount' => 10.50,
+        'webhookurl' => 'https://your-domain.com/webhooks/braix'
+    ];
+    
+    $context = stream_context_create([
+        'http' => [
+            'header' => [
+                'Authorization: Bearer ' . $token,
+                'Content-Type: application/json'
+            ],
+            'method' => 'POST',
+            'content' => json_encode($data)
+        ]
+    ]);
+    
+    $response = file_get_contents('https://api.braix.com.br/requestQrCode', false, $context);
+    
+    if ($response === FALSE) {
+        echo 'Error creating QR Code';
+    } else {
+        echo 'QR Code created: ' . $response;
+    }
+}
+
+createPixQrCode();
+?>
+```
+</CodeGroup>
+
+## Step 5: Handle Webhooks
 
 Set up a webhook endpoint to receive payment notifications:
 
@@ -218,7 +285,7 @@ echo json_encode(['received' => true]);
 ```
 </CodeGroup>
 
-## Step 5: Test Your Integration
+## Step 6: Test Your Integration
 
 <Steps>
 <Step title="Create a Test Payment">
