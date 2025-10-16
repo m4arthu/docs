@@ -5,7 +5,7 @@
     "dark": "https://api.braix.com.br/assets/icon.png",
     "light": "https://api.braix.com.br/assets/icon.png"
   },
-  "favicon": "/favicon.png",
+  "favicon": "https://api.braix.com.br/assets/icon.png",
   "colors": {
     "primary": "#ffffff",
     "light": "#f5f5f5",
