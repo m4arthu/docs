@@ -49,6 +49,15 @@
       "group": "API Reference",
       "pages": [
         "api-reference/endpoints",
+        "api-reference/auth-token",
+        "api-reference/request-qrcode",
+        "api-reference/request-qrcode-split",
+        "api-reference/make-payment",
+        "api-reference/pix-refund",
+        "api-reference/check-transaction-status",
+        "api-reference/check-med-status",
+        "api-reference/pix-export",
+        "api-reference/get-user-balance",
         "api-reference/pix",
         "api-reference/transactions",
         "api-reference/webhooks"

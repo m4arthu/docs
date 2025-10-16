@@ -1,0 +1,148 @@
+---
+title: "GET /api/getUserBalance"
+description: "Get the current balance of a user"
+---
+
+# GET /api/getUserBalance
+
+Get the current balance of a user. This endpoint returns the available balance in the user's wallet.
+
+## Request
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.braix.com.br/api/getUserBalance" \
+  -H "Authorization: Bearer your_access_token"
+```
+</RequestExample>
+
+<CodeGroup>
+```javascript JavaScript
+const axios = require('axios');
+
+const getUserBalance = async () => {
+  const response = await axios.get('https://api.braix.com.br/api/getUserBalance', {
+    headers: {
+      'Authorization': `Bearer ${process.env.BRAIX_ACCESS_TOKEN}`
+    }
+  });
+  
+  return response.data;
+};
+```
+
+```python Python
+import requests
+
+def get_user_balance():
+    headers = {
+        'Authorization': f'Bearer {os.getenv("BRAIX_ACCESS_TOKEN")}'
+    }
+    
+    response = requests.get('https://api.braix.com.br/api/getUserBalance', headers=headers)
+    return response.json()
+```
+
+```php PHP
+<?php
+function getUserBalance() {
+    $token = $_ENV['BRAIX_ACCESS_TOKEN'];
+    
+    $context = stream_context_create([
+        'http' => [
+            'header' => [
+                'Authorization: Bearer ' . $token
+            ],
+            'method' => 'GET'
+        ]
+    ]);
+    
+    $response = file_get_contents('https://api.braix.com.br/api/getUserBalance', false, $context);
+    return json_decode($response, true);
+}
+?>
+```
+</CodeGroup>
+
+## Response
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "balance": 1500.50,
+  "currency": "BRL",
+  "lastUpdated": "2024-01-15T10:30:00Z",
+  "wallet": {
+    "id": "wallet_123456789",
+    "status": "active"
+  }
+}
+```
+</ResponseExample>
+
+## Response Fields
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful.
+</ResponseField>
+
+<ResponseField name="balance" type="number">
+  The current available balance in BRL.
+</ResponseField>
+
+<ResponseField name="currency" type="string">
+  The currency code (always "BRL" for Brazilian Real).
+</ResponseField>
+
+<ResponseField name="lastUpdated" type="string">
+  The timestamp when the balance was last updated.
+</ResponseField>
+
+<ResponseField name="wallet" type="object">
+  Wallet information including ID and status.
+</ResponseField>
+
+## Error Responses
+
+<ResponseField name="401 Unauthorized" type="object">
+  Returned when authentication fails.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Unauthorized",
+      "error": "Invalid or expired token"
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="403 Forbidden" type="object">
+  Returned when the user doesn't have permission to access balance information.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Forbidden",
+      "error": "Insufficient permissions to access balance"
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="500 Internal Server Error" type="object">
+  Returned when an internal server error occurs.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Internal Server Error",
+      "error": "Unable to retrieve balance information"
+    }
+    ```
+  </Expandable>
+</ResponseField>
