@@ -53,6 +53,7 @@
         "api-reference/request-qrcode",
         "api-reference/request-qrcode-split",
         "api-reference/make-payment",
+        "api-reference/request-payment",
         "api-reference/pix-refund",
         "api-reference/check-transaction-status",
         "api-reference/check-med-status",
