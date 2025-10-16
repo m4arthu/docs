@@ -1,0 +1,759 @@
+---
+title: "PIX Integration Guide"
+description: "Complete guide to integrating PIX payments with PinePay API"
+---
+
+# PIX Integration Guide
+
+This comprehensive guide will walk you through integrating PIX payments with PinePay API, from basic setup to advanced features like webhooks and refunds.
+
+## Overview
+
+PIX (Sistema de Pagamentos Instantâneos) is Brazil's instant payment system that allows real-time transfers 24/7. PinePay provides a unified API to integrate with multiple PIX gateways, simplifying the complexity of different provider implementations.
+
+## Prerequisites
+
+Before starting your integration, ensure you have:
+
+- A PinePay account with API credentials
+- A webhook endpoint URL for receiving notifications
+- Basic understanding of REST APIs and webhooks
+- Development environment with your preferred programming language
+
+## Step 1: Choose Your Gateway
+
+PinePay supports multiple PIX gateways. Choose the one that best fits your needs:
+
+<CardGroup cols={2}>
+<Card title="Woovi" icon="zap">
+  **Best for**: Startups and small businesses
+  - Easy integration
+  - Competitive rates
+  - Good documentation
+</Card>
+
+<Card title="Treeal" icon="shield">
+  **Best for**: High-volume businesses
+  - Advanced fraud detection
+  - Enterprise features
+  - High reliability
+</Card>
+
+<Card title="Voluti" icon="rocket">
+  **Best for**: Performance-critical applications
+  - High-speed processing
+  - Low latency
+  - Scalable infrastructure
+</Card>
+
+<Card title="EFI" icon="bank">
+  **Best for**: Banking integrations
+  - Bank-grade security
+  - Regulatory compliance
+  - Enterprise support
+</Card>
+</CardGroup>
+
+## Step 2: Basic PIX Payment
+
+Let's start with a simple PIX payment integration:
+
+<CodeGroup>
+```javascript Node.js
+const axios = require('axios');
+
+class PinePayClient {
+  constructor(apiKey, baseUrl = 'https://api.pinepay.com') {
+    this.apiKey = apiKey;
+    this.baseUrl = baseUrl;
+  }
+
+  async createPixPayment(paymentData) {
+    try {
+      const response = await axios.post(`${this.baseUrl}/requestPayment`, {
+        amount: paymentData.amount,
+        pixKey: paymentData.pixKey,
+        webhookUrl: paymentData.webhookUrl,
+        externalId: paymentData.externalId,
+        gateway: paymentData.gateway || 'woovi',
+        description: paymentData.description
+      }, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      return response.data;
+    } catch (error) {
+      throw new Error(`PIX payment failed: ${error.response?.data?.message || error.message}`);
+    }
+  }
+}
+
+// Usage
+const client = new PinePayClient(process.env.PINEPAY_API_KEY);
+
+const payment = await client.createPixPayment({
+  amount: 10.50,
+  pixKey: 'user@example.com',
+  webhookUrl: 'https://your-domain.com/webhooks/pinepay',
+  externalId: 'order_123',
+  gateway: 'woovi',
+  description: 'Payment for order #123'
+});
+
+console.log('Payment created:', payment);
+```
+
+```python Python
+import requests
+import os
+
+class PinePayClient:
+    def __init__(self, api_key, base_url='https://api.pinepay.com'):
+        self.api_key = api_key
+        self.base_url = base_url
+        self.headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json'
+        }
+    
+    def create_pix_payment(self, payment_data):
+        try:
+            response = requests.post(
+                f'{self.base_url}/requestPayment',
+                json=payment_data,
+                headers=self.headers
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            raise Exception(f'PIX payment failed: {e}')
+
+# Usage
+client = PinePayClient(os.getenv('PINEPAY_API_KEY'))
+
+payment = client.create_pix_payment({
+    'amount': 10.50,
+    'pixKey': 'user@example.com',
+    'webhookUrl': 'https://your-domain.com/webhooks/pinepay',
+    'externalId': 'order_123',
+    'gateway': 'woovi',
+    'description': 'Payment for order #123'
+})
+
+print('Payment created:', payment)
+```
+
+```php PHP
+<?php
+class PinePayClient {
+    private $apiKey;
+    private $baseUrl;
+    
+    public function __construct($apiKey, $baseUrl = 'https://api.pinepay.com') {
+        $this->apiKey = $apiKey;
+        $this->baseUrl = $baseUrl;
+    }
+    
+    public function createPixPayment($paymentData) {
+        $url = $this->baseUrl . '/requestPayment';
+        
+        $options = [
+            'http' => [
+                'header' => [
+                    'Authorization: Bearer ' . $this->apiKey,
+                    'Content-Type: application/json'
+                ],
+                'method' => 'POST',
+                'content' => json_encode($paymentData)
+            ]
+        ];
+        
+        $context = stream_context_create($options);
+        $result = file_get_contents($url, false, $context);
+        
+        if ($result === FALSE) {
+            throw new Exception('PIX payment failed');
+        }
+        
+        return json_decode($result, true);
+    }
+}
+
+// Usage
+$client = new PinePayClient($_ENV['PINEPAY_API_KEY']);
+
+$payment = $client->createPixPayment([
+    'amount' => 10.50,
+    'pixKey' => 'user@example.com',
+    'webhookUrl' => 'https://your-domain.com/webhooks/pinepay',
+    'externalId' => 'order_123',
+    'gateway' => 'woovi',
+    'description' => 'Payment for order #123'
+]);
+
+echo 'Payment created: ' . json_encode($payment);
+?>
+```
+</CodeGroup>
+
+## Step 3: Generate PIX QR Codes
+
+For receiving payments, you can generate PIX QR codes:
+
+<CodeGroup>
+```javascript Node.js
+async generatePixQrCode(qrData) {
+  try {
+    const response = await axios.post(`${this.baseUrl}/requestQrCode`, {
+      amount: qrData.amount,
+      webhookUrl: qrData.webhookUrl,
+      externalId: qrData.externalId,
+      description: qrData.description
+    }, {
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return response.data;
+  } catch (error) {
+    throw new Error(`QR code generation failed: ${error.response?.data?.message || error.message}`);
+  }
+}
+
+// Usage
+const qrCode = await client.generatePixQrCode({
+  amount: 25.00,
+  webhookUrl: 'https://your-domain.com/webhooks/pinepay',
+  externalId: 'qr_123',
+  description: 'QR Code payment'
+});
+
+console.log('QR Code:', qrCode.data.qrCode);
+console.log('QR Code Image:', qrCode.data.qrCodeImage);
+```
+
+```python Python
+def generate_pix_qr_code(self, qr_data):
+    try:
+        response = requests.post(
+            f'{self.base_url}/requestQrCode',
+            json=qr_data,
+            headers=self.headers
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        raise Exception(f'QR code generation failed: {e}')
+
+# Usage
+qr_code = client.generate_pix_qr_code({
+    'amount': 25.00,
+    'webhookUrl': 'https://your-domain.com/webhooks/pinepay',
+    'externalId': 'qr_123',
+    'description': 'QR Code payment'
+})
+
+print('QR Code:', qr_code['data']['qrCode'])
+print('QR Code Image:', qr_code['data']['qrCodeImage'])
+```
+
+```php PHP
+public function generatePixQrCode($qrData) {
+    $url = $this->baseUrl . '/requestQrCode';
+    
+    $options = [
+        'http' => [
+            'header' => [
+                'Authorization: Bearer ' . $this->apiKey,
+                'Content-Type: application/json'
+            ],
+            'method' => 'POST',
+            'content' => json_encode($qrData)
+        ]
+    ];
+    
+    $context = stream_context_create($options);
+    $result = file_get_contents($url, false, $context);
+    
+    if ($result === FALSE) {
+        throw new Exception('QR code generation failed');
+    }
+    
+    return json_decode($result, true);
+}
+
+// Usage
+$qrCode = $client->generatePixQrCode([
+    'amount' => 25.00,
+    'webhookUrl' => 'https://your-domain.com/webhooks/pinepay',
+    'externalId' => 'qr_123',
+    'description' => 'QR Code payment'
+]);
+
+echo 'QR Code: ' . $qrCode['data']['qrCode'];
+echo 'QR Code Image: ' . $qrCode['data']['qrCodeImage'];
+?>
+```
+</CodeGroup>
+
+## Step 4: Handle Webhooks
+
+Set up webhook endpoints to receive real-time notifications:
+
+<CodeGroup>
+```javascript Node.js
+const express = require('express');
+const crypto = require('crypto');
+
+app.use(express.json());
+
+// Verify webhook signature
+const verifyWebhookSignature = (payload, signature, secret) => {
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(signature.replace('sha256=', '')),
+    Buffer.from(expectedSignature)
+  );
+};
+
+app.post('/webhooks/pinepay', (req, res) => {
+  const signature = req.headers['x-pinepay-signature'];
+  const payload = JSON.stringify(req.body);
+  
+  // Verify signature
+  if (!verifyWebhookSignature(payload, signature, process.env.WEBHOOK_SECRET)) {
+    return res.status(401).json({ error: 'Invalid signature' });
+  }
+  
+  const { type, data } = req.body;
+  
+  switch (type) {
+    case 'PAYMENT_RECEIVED':
+      console.log('Payment received:', data);
+      // Update your database, send confirmation email, etc.
+      break;
+      
+    case 'PAYMENT_FAILED':
+      console.log('Payment failed:', data);
+      // Handle failed payment
+      break;
+      
+    case 'QR_CODE_PAID':
+      console.log('QR Code paid:', data);
+      // Handle QR code payment
+      break;
+      
+    default:
+      console.log('Unknown webhook type:', type);
+  }
+  
+  res.status(200).json({ received: true });
+});
+```
+
+```python Python
+from flask import Flask, request, jsonify
+import hmac
+import hashlib
+
+app = Flask(__name__)
+
+def verify_webhook_signature(payload, signature, secret):
+    expected_signature = hmac.new(
+        secret.encode('utf-8'),
+        payload.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+    
+    return hmac.compare_digest(signature.replace('sha256=', ''), expected_signature)
+
+@app.route('/webhooks/pinepay', methods=['POST'])
+def handle_webhook():
+    signature = request.headers.get('X-PinePay-Signature')
+    payload = request.get_data(as_text=True)
+    
+    # Verify signature
+    if not verify_webhook_signature(payload, signature, os.getenv('WEBHOOK_SECRET')):
+        return jsonify({'error': 'Invalid signature'}), 401
+    
+    data = request.get_json()
+    webhook_type = data.get('type')
+    
+    if webhook_type == 'PAYMENT_RECEIVED':
+        print('Payment received:', data.get('data'))
+        # Update your database, send confirmation email, etc.
+    elif webhook_type == 'PAYMENT_FAILED':
+        print('Payment failed:', data.get('data'))
+        # Handle failed payment
+    elif webhook_type == 'QR_CODE_PAID':
+        print('QR Code paid:', data.get('data'))
+        # Handle QR code payment
+    else:
+        print('Unknown webhook type:', webhook_type)
+    
+    return jsonify({'received': True})
+
+if __name__ == '__main__':
+    app.run(port=3000)
+```
+
+```php PHP
+<?php
+function verifyWebhookSignature($payload, $signature, $secret) {
+    $expectedSignature = hash_hmac('sha256', $payload, $secret);
+    return hash_equals($signature, 'sha256=' . $expectedSignature);
+}
+
+// Handle webhook
+$signature = $_SERVER['HTTP_X_PINEPAY_SIGNATURE'] ?? '';
+$payload = file_get_contents('php://input');
+
+// Verify signature
+if (!verifyWebhookSignature($payload, $signature, $_ENV['WEBHOOK_SECRET'])) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Invalid signature']);
+    exit;
+}
+
+$data = json_decode($payload, true);
+$webhookType = $data['type'] ?? '';
+
+switch ($webhookType) {
+    case 'PAYMENT_RECEIVED':
+        error_log('Payment received: ' . json_encode($data['data']));
+        // Update your database, send confirmation email, etc.
+        break;
+        
+    case 'PAYMENT_FAILED':
+        error_log('Payment failed: ' . json_encode($data['data']));
+        // Handle failed payment
+        break;
+        
+    case 'QR_CODE_PAID':
+        error_log('QR Code paid: ' . json_encode($data['data']));
+        // Handle QR code payment
+        break;
+        
+    default:
+        error_log('Unknown webhook type: ' . $webhookType);
+}
+
+http_response_code(200);
+echo json_encode(['received' => true]);
+?>
+```
+</CodeGroup>
+
+## Step 5: Process Refunds
+
+Handle PIX refunds when needed:
+
+<CodeGroup>
+```javascript Node.js
+async processPixRefund(endToEndId, amount) {
+  try {
+    const response = await axios.put(`${this.baseUrl}/${endToEndId}/devolucao`, {
+      valor: amount
+    }, {
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return response.data;
+  } catch (error) {
+    throw new Error(`Refund failed: ${error.response?.data?.message || error.message}`);
+  }
+}
+
+// Usage
+const refund = await client.processPixRefund('E12345678202401151234567890', 10.50);
+console.log('Refund processed:', refund);
+```
+
+```python Python
+def process_pix_refund(self, end_to_end_id, amount):
+    try:
+        response = requests.put(
+            f'{self.base_url}/{end_to_end_id}/devolucao',
+            json={'valor': amount},
+            headers=self.headers
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        raise Exception(f'Refund failed: {e}')
+
+# Usage
+refund = client.process_pix_refund('E12345678202401151234567890', 10.50)
+print('Refund processed:', refund)
+```
+
+```php PHP
+public function processPixRefund($endToEndId, $amount) {
+    $url = $this->baseUrl . '/' . $endToEndId . '/devolucao';
+    
+    $options = [
+        'http' => [
+            'header' => [
+                'Authorization: Bearer ' . $this->apiKey,
+                'Content-Type: application/json'
+            ],
+            'method' => 'PUT',
+            'content' => json_encode(['valor' => $amount])
+        ]
+    ];
+    
+    $context = stream_context_create($options);
+    $result = file_get_contents($url, false, $context);
+    
+    if ($result === FALSE) {
+        throw new Exception('Refund failed');
+    }
+    
+    return json_decode($result, true);
+}
+
+// Usage
+$refund = $client->processPixRefund('E12345678202401151234567890', 10.50);
+echo 'Refund processed: ' . json_encode($refund);
+?>
+```
+</CodeGroup>
+
+## Step 6: Check Transaction Status
+
+Monitor transaction status in real-time:
+
+<CodeGroup>
+```javascript Node.js
+async checkTransactionStatus(transactionId) {
+  try {
+    const response = await axios.post(`${this.baseUrl}/checkTransactionStatus`, {
+      txId: transactionId
+    }, {
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return response.data;
+  } catch (error) {
+    throw new Error(`Status check failed: ${error.response?.data?.message || error.message}`);
+  }
+}
+
+// Usage
+const status = await client.checkTransactionStatus('tx_123456789');
+console.log('Transaction status:', status);
+```
+
+```python Python
+def check_transaction_status(self, transaction_id):
+    try:
+        response = requests.post(
+            f'{self.base_url}/checkTransactionStatus',
+            json={'txId': transaction_id},
+            headers=self.headers
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        raise Exception(f'Status check failed: {e}')
+
+# Usage
+status = client.check_transaction_status('tx_123456789')
+print('Transaction status:', status)
+```
+
+```php PHP
+public function checkTransactionStatus($transactionId) {
+    $url = $this->baseUrl . '/checkTransactionStatus';
+    
+    $options = [
+        'http' => [
+            'header' => [
+                'Authorization: Bearer ' . $this->apiKey,
+                'Content-Type: application/json'
+            ],
+            'method' => 'POST',
+            'content' => json_encode(['txId' => $transactionId])
+        ]
+    ];
+    
+    $context = stream_context_create($options);
+    $result = file_get_contents($url, false, $context);
+    
+    if ($result === FALSE) {
+        throw new Exception('Status check failed');
+    }
+    
+    return json_decode($result, true);
+}
+
+// Usage
+$status = $client->checkTransactionStatus('tx_123456789');
+echo 'Transaction status: ' . json_encode($status);
+?>
+```
+</CodeGroup>
+
+## Advanced Features
+
+### Split Payments
+
+Handle multi-party payments with PIX splits:
+
+```javascript
+const splitPayment = await client.createPixPayment({
+  amount: 100.00,
+  pixKey: 'merchant@example.com',
+  webhookUrl: 'https://your-domain.com/webhooks/pinepay',
+  externalId: 'split_123',
+  gateway: 'woovi',
+  description: 'Split payment',
+  splits: [
+    {
+      amount: 80.00,
+      pixKey: 'partner1@example.com',
+      description: 'Partner 1 share'
+    },
+    {
+      amount: 20.00,
+      pixKey: 'partner2@example.com',
+      description: 'Partner 2 share'
+    }
+  ]
+});
+```
+
+### Error Handling
+
+Implement robust error handling:
+
+<CodeGroup>
+```javascript Node.js
+async createPixPaymentWithRetry(paymentData, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await this.createPixPayment(paymentData);
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      // Wait before retry (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+    }
+  }
+}
+```
+
+```python Python
+import time
+
+def create_pix_payment_with_retry(self, payment_data, max_retries=3):
+    for attempt in range(1, max_retries + 1):
+        try:
+            return self.create_pix_payment(payment_data)
+        except Exception as e:
+            if attempt == max_retries:
+                raise e
+            
+            # Wait before retry (exponential backoff)
+            time.sleep(2 ** attempt)
+```
+
+```php PHP
+public function createPixPaymentWithRetry($paymentData, $maxRetries = 3) {
+    for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+        try {
+            return $this->createPixPayment($paymentData);
+        } catch (Exception $e) {
+            if ($attempt == $maxRetries) {
+                throw $e;
+            }
+            
+            // Wait before retry (exponential backoff)
+            sleep(pow(2, $attempt));
+        }
+    }
+}
+```
+</CodeGroup>
+
+## Testing Your Integration
+
+### Test Environment
+
+<Steps>
+<Step title="Use Test Mode">
+  Set your environment to use test credentials and test gateways.
+</Step>
+
+<Step title="Test Webhooks">
+  Use tools like ngrok to expose your local webhook endpoint.
+</Step>
+
+<Step title="Verify Signatures">
+  Ensure your webhook signature verification is working correctly.
+</Step>
+
+<Step title="Test Error Scenarios">
+  Test with invalid data, network failures, and edge cases.
+</Step>
+</Steps>
+
+### Production Checklist
+
+<AccordionGroup>
+<Accordion title="Security">
+  - Verify webhook signatures
+  - Use HTTPS for all endpoints
+  - Store API keys securely
+  - Implement rate limiting
+</Accordion>
+
+<Accordion title="Monitoring">
+  - Set up health checks
+  - Monitor webhook delivery
+  - Track error rates
+  - Log all transactions
+</Accordion>
+
+<Accordion title="Performance">
+  - Implement retry logic
+  - Use connection pooling
+  - Cache frequently accessed data
+  - Monitor response times
+</Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Common Issues">
+  - **Authentication errors**: Verify API key and permissions
+  - **Webhook not received**: Check endpoint accessibility and signature verification
+  - **Payment not processed**: Verify gateway configuration and account status
+  - **Refund failures**: Ensure transaction is completed and within refund window
+</Accordion>
+
+<Accordion title="Debug Tips">
+  - Enable detailed logging
+  - Test with small amounts first
+  - Use webhook testing tools
+  - Check API response codes and messages
+</Accordion>
+</AccordionGroup>

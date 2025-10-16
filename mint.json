@@ -1,0 +1,92 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "PinePay API",
+  "logo": {
+    "dark": "/logo/dark.svg",
+    "light": "/logo/light.svg"
+  },
+  "favicon": "/favicon.png",
+  "colors": {
+    "primary": "#0D9373",
+    "light": "#07C983",
+    "dark": "#0D9373",
+    "anchors": {
+      "from": "#0D9373",
+      "to": "#07C983"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "Support",
+      "url": "mailto:support@pinepay.com"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Dashboard",
+    "url": "https://dashboard.pinepay.com"
+  },
+  "tabs": [
+    {
+      "name": "API Reference",
+      "url": "api-reference"
+    },
+    {
+      "name": "Guides",
+      "url": "guides"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "Discord",
+      "icon": "discord",
+      "url": "https://discord.gg/pinepay"
+    },
+    {
+      "name": "GitHub",
+      "icon": "github",
+      "url": "https://github.com/pinepay"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Get Started",
+      "pages": [
+        "introduction",
+        "quickstart",
+        "authentication"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "api-reference/pix",
+        "api-reference/transactions",
+        "api-reference/webhooks",
+        "api-reference/queue",
+        "api-reference/health"
+      ]
+    },
+    {
+      "group": "Guides",
+      "pages": [
+        "guides/pix-integration",
+        "guides/webhook-handling",
+        "guides/queue-management",
+        "guides/error-handling"
+      ]
+    },
+    {
+      "group": "SDKs",
+      "pages": [
+        "sdks/javascript",
+        "sdks/php",
+        "sdks/python"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "twitter": "https://twitter.com/pinepay",
+    "github": "https://github.com/pinepay",
+    "linkedin": "https://linkedin.com/company/pinepay"
+  }
+}

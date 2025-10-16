@@ -1,0 +1,556 @@
+---
+title: "PHP SDK"
+description: "Official PinePay PHP SDK for server-side applications"
+---
+
+# PHP SDK
+
+The PinePay PHP SDK provides a simple and powerful way to integrate PIX payments into your PHP applications.
+
+## Installation
+
+<CodeGroup>
+```bash composer
+composer require pinepay/sdk
+```
+
+```bash composer
+composer require pinepay/sdk:^1.0
+```
+</CodeGroup>
+
+## Quick Start
+
+```php
+<?php
+require_once 'vendor/autoload.php';
+
+use PinePay\PinePayClient;
+
+// Initialize the client
+$client = new PinePayClient([
+    'api_key' => $_ENV['PINEPAY_API_KEY'],
+    'environment' => 'production' // or 'sandbox'
+]);
+
+// Create a PIX payment
+$payment = $client->pix->createPayment([
+    'amount' => 10.50,
+    'pixKey' => 'user@example.com',
+    'webhookUrl' => 'https://your-domain.com/webhooks/pinepay',
+    'externalId' => 'order_123',
+    'gateway' => 'woovi',
+    'description' => 'Payment for order #123'
+]);
+
+echo 'Payment created: ' . json_encode($payment);
+?>
+```
+
+## Configuration
+
+### Environment Variables
+
+```bash .env
+PINEPAY_API_KEY=your_api_key_here
+PINEPAY_ENVIRONMENT=production
+PINEPAY_BASE_URL=https://api.pinepay.com
+```
+
+### Client Options
+
+```php
+<?php
+$client = new PinePayClient([
+    'api_key' => 'your_api_key_here',
+    'environment' => 'production', // 'production' or 'sandbox'
+    'base_url' => 'https://api.pinepay.com', // Optional, defaults to production URL
+    'timeout' => 30, // Request timeout in seconds
+    'retries' => 3, // Number of retries for failed requests
+    'retry_delay' => 1 // Delay between retries in seconds
+]);
+?>
+```
+
+## PIX Payments
+
+### Create Payment
+
+```php
+<?php
+$payment = $client->pix->createPayment([
+    'amount' => 10.50,
+    'pixKey' => 'user@example.com',
+    'webhookUrl' => 'https://your-domain.com/webhooks/pinepay',
+    'externalId' => 'order_123',
+    'gateway' => 'woovi',
+    'description' => 'Payment for order #123'
+]);
+
+echo 'Transaction ID: ' . $payment['data']['transactionId'];
+echo 'Status: ' . $payment['data']['status'];
+?>
+```
+
+### Generate QR Code
+
+```php
+<?php
+$qrCode = $client->pix->generateQrCode([
+    'amount' => 25.00,
+    'webhookUrl' => 'https://your-domain.com/webhooks/pinepay',
+    'externalId' => 'qr_123',
+    'description' => 'QR Code payment'
+]);
+
+echo 'QR Code: ' . $qrCode['data']['qrCode'];
+echo 'QR Code Image: ' . $qrCode['data']['qrCodeImage'];
+?>
+```
+
+### Check Transaction Status
+
+```php
+<?php
+$status = $client->pix->checkStatus([
+    'txId' => 'tx_123456789'
+]);
+
+echo 'Transaction status: ' . $status['data']['status'];
+?>
+```
+
+### Process Refund
+
+```php
+<?php
+$refund = $client->pix->processRefund([
+    'endToEndId' => 'E12345678202401151234567890',
+    'amount' => 10.50
+]);
+
+echo 'Refund ID: ' . $refund['data']['refundId'];
+?>
+```
+
+## Webhooks
+
+### Webhook Handler
+
+```php
+<?php
+// webhook.php
+$input = file_get_contents('php://input');
+$data = json_decode($input, true);
+
+$webhookType = $data['type'] ?? '';
+
+switch ($webhookType) {
+    case 'PAYMENT_RECEIVED':
+        error_log('Payment received: ' . json_encode($data['data']));
+        // Handle payment received
+        break;
+        
+    case 'PAYMENT_FAILED':
+        error_log('Payment failed: ' . json_encode($data['data']));
+        // Handle payment failure
+        break;
+        
+    case 'QR_CODE_PAID':
+        error_log('QR Code paid: ' . json_encode($data['data']));
+        // Handle QR code payment
+        break;
+        
+    default:
+        error_log('Unknown webhook type: ' . $webhookType);
+}
+
+http_response_code(200);
+echo json_encode(['received' => true]);
+?>
+```
+
+### Webhook Signature Verification
+
+```php
+<?php
+function verifyWebhookSignature($payload, $signature, $secret) {
+    $expectedSignature = hash_hmac('sha256', $payload, $secret);
+    return hash_equals($signature, 'sha256=' . $expectedSignature);
+}
+
+// webhook.php
+$signature = $_SERVER['HTTP_X_PINEPAY_SIGNATURE'] ?? '';
+$payload = file_get_contents('php://input');
+
+if (!verifyWebhookSignature($payload, $signature, $_ENV['WEBHOOK_SECRET'])) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Invalid signature']);
+    exit;
+}
+
+// Process webhook safely
+http_response_code(200);
+echo json_encode(['received' => true]);
+?>
+```
+
+## Error Handling
+
+### Custom Exception Classes
+
+```php
+<?php
+use PinePay\Exceptions\PinePayException;
+use PinePay\Exceptions\ValidationException;
+use PinePay\Exceptions\AuthenticationException;
+use PinePay\Exceptions\RateLimitException;
+
+try {
+    $payment = $client->pix->createPayment($paymentData);
+} catch (ValidationException $e) {
+    echo 'Validation error: ' . $e->getMessage();
+    echo 'Errors: ' . json_encode($e->getErrors());
+} catch (AuthenticationException $e) {
+    echo 'Authentication failed: ' . $e->getMessage();
+} catch (RateLimitException $e) {
+    echo 'Rate limit exceeded, retry after: ' . $e->getRetryAfter();
+} catch (PinePayException $e) {
+    echo 'PinePay error: ' . $e->getMessage();
+} catch (Exception $e) {
+    echo 'Unexpected error: ' . $e->getMessage();
+}
+?>
+```
+
+### Retry Logic
+
+```php
+<?php
+$client = new PinePayClient([
+    'api_key' => $_ENV['PINEPAY_API_KEY'],
+    'retries' => 3,
+    'retry_delay' => 1
+]);
+
+// The SDK will automatically retry failed requests
+$payment = $client->pix->createPayment($paymentData);
+?>
+```
+
+## Advanced Usage
+
+### Custom Headers
+
+```php
+<?php
+$client = new PinePayClient([
+    'api_key' => $_ENV['PINEPAY_API_KEY'],
+    'headers' => [
+        'User-Agent' => 'MyApp/1.0.0',
+        'X-Custom-Header' => 'custom-value'
+    ]
+]);
+?>
+```
+
+### Request Interceptors
+
+```php
+<?php
+$client = new PinePayClient([
+    'api_key' => $_ENV['PINEPAY_API_KEY'],
+    'on_request' => function($config) {
+        error_log('Making request: ' . $config['url']);
+        return $config;
+    },
+    'on_response' => function($response) {
+        error_log('Response received: ' . $response['status']);
+        return $response;
+    },
+    'on_error' => function($error) {
+        error_log('Request failed: ' . $error['message']);
+        return $error;
+    }
+]);
+?>
+```
+
+### Batch Operations
+
+```php
+<?php
+// Create multiple payments
+$payments = [];
+$paymentData = [
+    ['amount' => 10.00, 'pixKey' => 'user1@example.com'],
+    ['amount' => 20.00, 'pixKey' => 'user2@example.com'],
+    ['amount' => 30.00, 'pixKey' => 'user3@example.com']
+];
+
+foreach ($paymentData as $data) {
+    $payments[] = $client->pix->createPayment($data);
+}
+
+echo 'Created payments: ' . json_encode($payments);
+?>
+```
+
+## Laravel Integration
+
+### Service Provider
+
+```php
+<?php
+// app/Providers/PinePayServiceProvider.php
+namespace App\Providers;
+
+use Illuminate\Support\ServiceProvider;
+use PinePay\PinePayClient;
+
+class PinePayServiceProvider extends ServiceProvider
+{
+    public function register()
+    {
+        $this->app->singleton(PinePayClient::class, function ($app) {
+            return new PinePayClient([
+                'api_key' => config('pinepay.api_key'),
+                'environment' => config('pinepay.environment')
+            ]);
+        });
+    }
+}
+?>
+```
+
+### Configuration
+
+```php
+<?php
+// config/pinepay.php
+return [
+    'api_key' => env('PINEPAY_API_KEY'),
+    'environment' => env('PINEPAY_ENVIRONMENT', 'production'),
+    'webhook_secret' => env('PINEPAY_WEBHOOK_SECRET')
+];
+?>
+```
+
+### Controller
+
+```php
+<?php
+// app/Http/Controllers/PaymentController.php
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use PinePay\PinePayClient;
+
+class PaymentController extends Controller
+{
+    protected $pinepay;
+    
+    public function __construct(PinePayClient $pinepay)
+    {
+        $this->pinepay = $pinepay;
+    }
+    
+    public function createPayment(Request $request)
+    {
+        try {
+            $payment = $this->pinepay->pix->createPayment([
+                'amount' => $request->amount,
+                'pixKey' => $request->pixKey,
+                'webhookUrl' => route('webhooks.pinepay'),
+                'externalId' => $request->externalId,
+                'gateway' => $request->gateway,
+                'description' => $request->description
+            ]);
+            
+            return response()->json($payment);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+}
+?>
+```
+
+### Routes
+
+```php
+<?php
+// routes/web.php
+Route::post('/payments', [PaymentController::class, 'createPayment']);
+Route::post('/webhooks/pinepay', [WebhookController::class, 'handlePinePay']);
+?>
+```
+
+## Symfony Integration
+
+### Service Configuration
+
+```yaml
+# config/services.yaml
+services:
+    pinepay.client:
+        class: PinePay\PinePayClient
+        arguments:
+            - api_key: '%env(PINEPAY_API_KEY)%'
+              environment: '%env(PINEPAY_ENVIRONMENT)%'
+```
+
+### Controller
+
+```php
+<?php
+// src/Controller/PaymentController.php
+namespace App\Controller;
+
+use PinePay\PinePayClient;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+
+class PaymentController extends AbstractController
+{
+    private $pinepay;
+    
+    public function __construct(PinePayClient $pinepay)
+    {
+        $this->pinepay = $pinepay;
+    }
+    
+    public function createPayment(Request $request): JsonResponse
+    {
+        try {
+            $data = json_decode($request->getContent(), true);
+            
+            $payment = $this->pinepay->pix->createPayment([
+                'amount' => $data['amount'],
+                'pixKey' => $data['pixKey'],
+                'webhookUrl' => $this->generateUrl('webhook_pinepay'),
+                'externalId' => $data['externalId'],
+                'gateway' => $data['gateway'],
+                'description' => $data['description']
+            ]);
+            
+            return new JsonResponse($payment);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+}
+?>
+```
+
+## Examples
+
+### E-commerce Integration
+
+```php
+<?php
+// checkout.php
+$amount = $_POST['amount'];
+$customerEmail = $_POST['customer_email'];
+
+try {
+    $payment = $client->pix->createPayment([
+        'amount' => $amount,
+        'pixKey' => $customerEmail,
+        'webhookUrl' => 'https://your-domain.com/webhooks/pinepay',
+        'externalId' => 'order_' . time(),
+        'gateway' => 'woovi',
+        'description' => 'Payment for order ' . time()
+    ]);
+    
+    echo json_encode([
+        'success' => true,
+        'payment' => $payment['data']
+    ]);
+} catch (Exception $e) {
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage()
+    ]);
+}
+?>
+```
+
+### Subscription Billing
+
+```php
+<?php
+function createSubscriptionPayment($subscriptionId, $amount) {
+    try {
+        $payment = $client->pix->createPayment([
+            'amount' => $amount,
+            'pixKey' => 'subscription@example.com',
+            'webhookUrl' => 'https://your-domain.com/webhooks/pinepay',
+            'externalId' => 'subscription_' . $subscriptionId,
+            'gateway' => 'woovi',
+            'description' => 'Monthly subscription payment'
+        ]);
+        
+        return $payment;
+    } catch (Exception $e) {
+        error_log('Subscription payment failed: ' . $e->getMessage());
+        throw $e;
+    }
+}
+?>
+```
+
+## API Reference
+
+### PinePayClient
+
+<ParamField name="api_key" type="string" required>
+Your PinePay API key
+</ParamField>
+
+<ParamField name="environment" type="string" default="production">
+Environment: 'production' or 'sandbox'
+</ParamField>
+
+<ParamField name="base_url" type="string">
+Custom base URL for the API
+</ParamField>
+
+<ParamField name="timeout" type="integer" default="30">
+Request timeout in seconds
+</ParamField>
+
+<ParamField name="retries" type="integer" default="3">
+Number of retries for failed requests
+</ParamField>
+
+<ParamField name="retry_delay" type="integer" default="1">
+Delay between retries in seconds
+</ParamField>
+
+### Methods
+
+<ResponseField name="pix->createPayment" type="method">
+Create a new PIX payment
+</ResponseField>
+
+<ResponseField name="pix->generateQrCode" type="method">
+Generate a PIX QR code
+</ResponseField>
+
+<ResponseField name="pix->checkStatus" type="method">
+Check transaction status
+</ResponseField>
+
+<ResponseField name="pix->processRefund" type="method">
+Process a PIX refund
+</ResponseField>
+
+<ResponseField name="pix->getTransactions" type="method">
+Get user transactions
+</ResponseField>
+
+<ResponseField name="pix->getStatistics" type="method">
+Get transaction statistics
+</ResponseField>

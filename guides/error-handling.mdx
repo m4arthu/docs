@@ -1,0 +1,800 @@
+---
+title: "Error Handling Guide"
+description: "Comprehensive guide to handling errors and exceptions in PinePay API integration"
+---
+
+# Error Handling Guide
+
+Proper error handling is crucial for building reliable applications with PinePay API. This guide covers common errors, best practices, and implementation strategies.
+
+## HTTP Status Codes
+
+PinePay API uses standard HTTP status codes to indicate the success or failure of requests:
+
+<AccordionGroup>
+<Accordion title="2xx Success">
+  - **200 OK**: Request successful
+  - **201 Created**: Resource created successfully
+  - **202 Accepted**: Request accepted for processing
+</Accordion>
+
+<Accordion title="4xx Client Errors">
+  - **400 Bad Request**: Invalid request parameters
+  - **401 Unauthorized**: Invalid or missing API key
+  - **403 Forbidden**: Insufficient permissions
+  - **404 Not Found**: Resource not found
+  - **429 Too Many Requests**: Rate limit exceeded
+</Accordion>
+
+<Accordion title="5xx Server Errors">
+  - **500 Internal Server Error**: Unexpected server error
+  - **502 Bad Gateway**: Gateway error
+  - **503 Service Unavailable**: Service temporarily unavailable
+</Accordion>
+</AccordionGroup>
+
+## Common Error Responses
+
+### Validation Errors
+
+<ResponseExample>
+```json 400 Bad Request
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "amount",
+      "message": "Amount must be greater than 0.01"
+    },
+    {
+      "field": "pixKey",
+      "message": "PIX key is required"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+### Authentication Errors
+
+<ResponseExample>
+```json 401 Unauthorized
+{
+  "success": false,
+  "message": "Unauthorized",
+  "error": "Invalid API key"
+}
+```
+</ResponseExample>
+
+### Rate Limit Errors
+
+<ResponseExample>
+```json 429 Too Many Requests
+{
+  "success": false,
+  "message": "Too many requests",
+  "retryAfter": 900
+}
+```
+</ResponseExample>
+
+### Server Errors
+
+<ResponseExample>
+```json 500 Internal Server Error
+{
+  "success": false,
+  "message": "Internal server error",
+  "error": "An unexpected error occurred"
+}
+```
+</ResponseExample>
+
+## Error Handling Implementation
+
+### Basic Error Handling
+
+<CodeGroup>
+```javascript Node.js
+const axios = require('axios');
+
+class PinePayClient {
+  constructor(apiKey, baseUrl = 'https://api.pinepay.com') {
+    this.apiKey = apiKey;
+    this.baseUrl = baseUrl;
+  }
+
+  async createPixPayment(paymentData) {
+    try {
+      const response = await axios.post(`${this.baseUrl}/requestPayment`, paymentData, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        // Server responded with error status
+        const { status, data } = error.response;
+        
+        switch (status) {
+          case 400:
+            throw new ValidationError(data.message, data.errors);
+          case 401:
+            throw new AuthenticationError(data.message);
+          case 403:
+            throw new PermissionError(data.message);
+          case 429:
+            throw new RateLimitError(data.message, data.retryAfter);
+          case 500:
+            throw new ServerError(data.message);
+          default:
+            throw new APIError(data.message, status);
+        }
+      } else if (error.request) {
+        // Network error
+        throw new NetworkError('Network request failed');
+      } else {
+        // Other error
+        throw new Error(error.message);
+      }
+    }
+  }
+}
+
+// Custom error classes
+class ValidationError extends Error {
+  constructor(message, errors) {
+    super(message);
+    this.name = 'ValidationError';
+    this.errors = errors;
+  }
+}
+
+class AuthenticationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'AuthenticationError';
+  }
+}
+
+class RateLimitError extends Error {
+  constructor(message, retryAfter) {
+    super(message);
+    this.name = 'RateLimitError';
+    this.retryAfter = retryAfter;
+  }
+}
+
+class ServerError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ServerError';
+  }
+}
+
+class NetworkError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'NetworkError';
+  }
+}
+
+class APIError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = 'APIError';
+    this.status = status;
+  }
+}
+```
+
+```python Python
+import requests
+from requests.exceptions import RequestException, Timeout, ConnectionError
+
+class PinePayError(Exception):
+    """Base exception for PinePay errors"""
+    pass
+
+class ValidationError(PinePayError):
+    def __init__(self, message, errors=None):
+        super().__init__(message)
+        self.errors = errors
+
+class AuthenticationError(PinePayError):
+    pass
+
+class RateLimitError(PinePayError):
+    def __init__(self, message, retry_after=None):
+        super().__init__(message)
+        self.retry_after = retry_after
+
+class ServerError(PinePayError):
+    pass
+
+class NetworkError(PinePayError):
+    pass
+
+class APIError(PinePayError):
+    def __init__(self, message, status_code=None):
+        super().__init__(message)
+        self.status_code = status_code
+
+class PinePayClient:
+    def __init__(self, api_key, base_url='https://api.pinepay.com'):
+        self.api_key = api_key
+        self.base_url = base_url
+        self.headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json'
+        }
+    
+    def create_pix_payment(self, payment_data):
+        try:
+            response = requests.post(
+                f'{self.base_url}/requestPayment',
+                json=payment_data,
+                headers=self.headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            
+            # Handle error responses
+            error_data = response.json()
+            
+            if response.status_code == 400:
+                raise ValidationError(error_data.get('message'), error_data.get('errors'))
+            elif response.status_code == 401:
+                raise AuthenticationError(error_data.get('message'))
+            elif response.status_code == 403:
+                raise PermissionError(error_data.get('message'))
+            elif response.status_code == 429:
+                raise RateLimitError(error_data.get('message'), error_data.get('retryAfter'))
+            elif response.status_code >= 500:
+                raise ServerError(error_data.get('message'))
+            else:
+                raise APIError(error_data.get('message'), response.status_code)
+                
+        except Timeout:
+            raise NetworkError('Request timeout')
+        except ConnectionError:
+            raise NetworkError('Connection failed')
+        except RequestException as e:
+            raise NetworkError(f'Network error: {e}')
+```
+
+```php PHP
+<?php
+class PinePayError extends Exception {
+    protected $errors;
+    
+    public function __construct($message, $errors = null) {
+        parent::__construct($message);
+        $this->errors = $errors;
+    }
+    
+    public function getErrors() {
+        return $this->errors;
+    }
+}
+
+class ValidationError extends PinePayError {}
+class AuthenticationError extends PinePayError {}
+class RateLimitError extends PinePayError {
+    protected $retryAfter;
+    
+    public function __construct($message, $retryAfter = null) {
+        parent::__construct($message);
+        $this->retryAfter = $retryAfter;
+    }
+    
+    public function getRetryAfter() {
+        return $this->retryAfter;
+    }
+}
+class ServerError extends PinePayError {}
+class NetworkError extends PinePayError {}
+
+class PinePayClient {
+    private $apiKey;
+    private $baseUrl;
+    
+    public function __construct($apiKey, $baseUrl = 'https://api.pinepay.com') {
+        $this->apiKey = $apiKey;
+        $this->baseUrl = $baseUrl;
+    }
+    
+    public function createPixPayment($paymentData) {
+        $url = $this->baseUrl . '/requestPayment';
+        
+        $options = [
+            'http' => [
+                'header' => [
+                    'Authorization: Bearer ' . $this->apiKey,
+                    'Content-Type: application/json'
+                ],
+                'method' => 'POST',
+                'content' => json_encode($paymentData),
+                'timeout' => 30
+            ]
+        ];
+        
+        $context = stream_context_create($options);
+        $result = file_get_contents($url, false, $context);
+        
+        if ($result === FALSE) {
+            throw new NetworkError('Request failed');
+        }
+        
+        $response = json_decode($result, true);
+        $httpCode = $this->getHttpCode($http_response_header);
+        
+        if ($httpCode == 200) {
+            return $response;
+        }
+        
+        // Handle error responses
+        if ($httpCode == 400) {
+            throw new ValidationError($response['message'], $response['errors']);
+        } elseif ($httpCode == 401) {
+            throw new AuthenticationError($response['message']);
+        } elseif ($httpCode == 403) {
+            throw new PermissionError($response['message']);
+        } elseif ($httpCode == 429) {
+            throw new RateLimitError($response['message'], $response['retryAfter']);
+        } elseif ($httpCode >= 500) {
+            throw new ServerError($response['message']);
+        } else {
+            throw new APIError($response['message'], $httpCode);
+        }
+    }
+    
+    private function getHttpCode($headers) {
+        foreach ($headers as $header) {
+            if (strpos($header, 'HTTP/') === 0) {
+                return (int) substr($header, 9, 3);
+            }
+        }
+        return 200;
+    }
+}
+?>
+```
+</CodeGroup>
+
+### Retry Logic with Exponential Backoff
+
+<CodeGroup>
+```javascript Node.js
+class PinePayClient {
+  async createPixPaymentWithRetry(paymentData, maxRetries = 3) {
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await this.createPixPayment(paymentData);
+      } catch (error) {
+        lastError = error;
+        
+        // Don't retry certain errors
+        if (error instanceof ValidationError || 
+            error instanceof AuthenticationError ||
+            error instanceof PermissionError) {
+          throw error;
+        }
+        
+        // Don't retry if we've exhausted attempts
+        if (attempt === maxRetries) {
+          throw error;
+        }
+        
+        // Calculate delay with exponential backoff
+        const delay = Math.pow(2, attempt) * 1000;
+        console.log(`Attempt ${attempt} failed, retrying in ${delay}ms...`);
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    
+    throw lastError;
+  }
+}
+```
+
+```python Python
+import time
+import random
+
+class PinePayClient:
+    def create_pix_payment_with_retry(self, payment_data, max_retries=3):
+        last_error = None
+        
+        for attempt in range(1, max_retries + 1):
+            try:
+                return self.create_pix_payment(payment_data)
+            except (ValidationError, AuthenticationError, PermissionError) as e:
+                # Don't retry certain errors
+                raise e
+            except Exception as e:
+                last_error = e
+                
+                # Don't retry if we've exhausted attempts
+                if attempt == max_retries:
+                    raise e
+                
+                # Calculate delay with exponential backoff and jitter
+                delay = (2 ** attempt) * 1000 + random.randint(0, 1000)
+                print(f'Attempt {attempt} failed, retrying in {delay}ms...')
+                
+                time.sleep(delay / 1000)
+        
+        raise last_error
+```
+
+```php PHP
+<?php
+class PinePayClient {
+    public function createPixPaymentWithRetry($paymentData, $maxRetries = 3) {
+        $lastError = null;
+        
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            try {
+                return $this->createPixPayment($paymentData);
+            } catch (ValidationError $e) {
+                // Don't retry validation errors
+                throw $e;
+            } catch (AuthenticationError $e) {
+                // Don't retry authentication errors
+                throw $e;
+            } catch (PermissionError $e) {
+                // Don't retry permission errors
+                throw $e;
+            } catch (Exception $e) {
+                $lastError = $e;
+                
+                // Don't retry if we've exhausted attempts
+                if ($attempt == $maxRetries) {
+                    throw $e;
+                }
+                
+                // Calculate delay with exponential backoff
+                $delay = pow(2, $attempt) * 1000;
+                echo "Attempt {$attempt} failed, retrying in {$delay}ms...\n";
+                
+                usleep($delay * 1000);
+            }
+        }
+        
+        throw $lastError;
+    }
+}
+?>
+```
+</CodeGroup>
+
+## Error Monitoring and Logging
+
+### Comprehensive Error Logging
+
+<CodeGroup>
+```javascript Node.js
+const winston = require('winston');
+
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.errors({ stack: true }),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.File({ filename: 'error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'combined.log' })
+  ]
+});
+
+class PinePayClient {
+  async createPixPayment(paymentData) {
+    try {
+      const response = await axios.post(`${this.baseUrl}/requestPayment`, paymentData, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      logger.info('PIX payment created successfully', {
+        transactionId: response.data.data?.transactionId,
+        amount: paymentData.amount,
+        gateway: paymentData.gateway
+      });
+
+      return response.data;
+    } catch (error) {
+      logger.error('PIX payment creation failed', {
+        error: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        paymentData: {
+          amount: paymentData.amount,
+          gateway: paymentData.gateway,
+          externalId: paymentData.externalId
+        }
+      });
+
+      throw error;
+    }
+  }
+}
+```
+
+```python Python
+import logging
+import json
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('error.log'),
+        logging.FileHandler('combined.log')
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+class PinePayClient:
+    def create_pix_payment(self, payment_data):
+        try:
+            response = requests.post(
+                f'{self.base_url}/requestPayment',
+                json=payment_data,
+                headers=self.headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                logger.info('PIX payment created successfully', extra={
+                    'transaction_id': response.json().get('data', {}).get('transactionId'),
+                    'amount': payment_data.get('amount'),
+                    'gateway': payment_data.get('gateway')
+                })
+                return response.json()
+            
+            # Handle error responses
+            error_data = response.json()
+            logger.error('PIX payment creation failed', extra={
+                'error': error_data.get('message'),
+                'status': response.status_code,
+                'data': error_data,
+                'payment_data': {
+                    'amount': payment_data.get('amount'),
+                    'gateway': payment_data.get('gateway'),
+                    'external_id': payment_data.get('externalId')
+                }
+            })
+            
+            # Raise appropriate exception
+            if response.status_code == 400:
+                raise ValidationError(error_data.get('message'), error_data.get('errors'))
+            # ... other error handling
+            
+        except Exception as e:
+            logger.error('PIX payment creation failed', extra={
+                'error': str(e),
+                'payment_data': payment_data
+            })
+            raise
+```
+
+```php PHP
+<?php
+// Configure logging
+$logger = new Monolog\Logger('pinepay');
+$logger->pushHandler(new Monolog\Handler\StreamHandler('error.log', Monolog\Logger::ERROR));
+$logger->pushHandler(new Monolog\Handler\StreamHandler('combined.log', Monolog\Logger::INFO));
+
+class PinePayClient {
+    private $logger;
+    
+    public function __construct($apiKey, $baseUrl = 'https://api.pinepay.com') {
+        $this->apiKey = $apiKey;
+        $this->baseUrl = $baseUrl;
+        $this->logger = new Monolog\Logger('pinepay');
+    }
+    
+    public function createPixPayment($paymentData) {
+        try {
+            $url = $this->baseUrl . '/requestPayment';
+            
+            $options = [
+                'http' => [
+                    'header' => [
+                        'Authorization: Bearer ' . $this->apiKey,
+                        'Content-Type: application/json'
+                    ],
+                    'method' => 'POST',
+                    'content' => json_encode($paymentData),
+                    'timeout' => 30
+                ]
+            ];
+            
+            $context = stream_context_create($options);
+            $result = file_get_contents($url, false, $context);
+            
+            if ($result === FALSE) {
+                throw new NetworkError('Request failed');
+            }
+            
+            $response = json_decode($result, true);
+            $httpCode = $this->getHttpCode($http_response_header);
+            
+            if ($httpCode == 200) {
+                $this->logger->info('PIX payment created successfully', [
+                    'transaction_id' => $response['data']['transactionId'] ?? null,
+                    'amount' => $paymentData['amount'],
+                    'gateway' => $paymentData['gateway']
+                ]);
+                return $response;
+            }
+            
+            // Log error
+            $this->logger->error('PIX payment creation failed', [
+                'error' => $response['message'] ?? 'Unknown error',
+                'status' => $httpCode,
+                'data' => $response,
+                'payment_data' => [
+                    'amount' => $paymentData['amount'],
+                    'gateway' => $paymentData['gateway'],
+                    'external_id' => $paymentData['externalId']
+                ]
+            ]);
+            
+            // Handle error responses
+            if ($httpCode == 400) {
+                throw new ValidationError($response['message'], $response['errors']);
+            }
+            // ... other error handling
+            
+        } catch (Exception $e) {
+            $this->logger->error('PIX payment creation failed', [
+                'error' => $e->getMessage(),
+                'payment_data' => $paymentData
+            ]);
+            throw $e;
+        }
+    }
+}
+?>
+```
+</CodeGroup>
+
+## Best Practices
+
+### Error Handling Strategies
+
+<AccordionGroup>
+<Accordion title="Immediate Retry">
+  - Network timeouts
+  - Temporary server errors (5xx)
+  - Rate limit errors (429)
+</Accordion>
+
+<Accordion title="No Retry">
+  - Validation errors (400)
+  - Authentication errors (401)
+  - Permission errors (403)
+  - Not found errors (404)
+</Accordion>
+
+<Accordion title="Exponential Backoff">
+  - Use exponential backoff for retries
+  - Add jitter to prevent thundering herd
+  - Set maximum retry limits
+</Accordion>
+</AccordionGroup>
+
+### Monitoring and Alerting
+
+<Steps>
+<Step title="Set Up Error Monitoring">
+  Use tools like Sentry, DataDog, or New Relic to monitor errors
+</Step>
+
+<Step title="Configure Alerts">
+  Set up alerts for high error rates and critical failures
+</Step>
+
+<Step title="Track Metrics">
+  Monitor error rates, response times, and success rates
+</Step>
+
+<Step title="Regular Reviews">
+  Review error logs regularly to identify patterns and issues
+</Step>
+</Steps>
+
+### User-Friendly Error Messages
+
+<CodeGroup>
+```javascript Node.js
+function getUserFriendlyMessage(error) {
+  if (error instanceof ValidationError) {
+    return 'Please check your payment information and try again.';
+  } else if (error instanceof AuthenticationError) {
+    return 'Authentication failed. Please contact support.';
+  } else if (error instanceof RateLimitError) {
+    return 'Too many requests. Please try again later.';
+  } else if (error instanceof NetworkError) {
+    return 'Network error. Please check your connection and try again.';
+  } else {
+    return 'An unexpected error occurred. Please try again later.';
+  }
+}
+```
+
+```python Python
+def get_user_friendly_message(error):
+    if isinstance(error, ValidationError):
+        return 'Please check your payment information and try again.'
+    elif isinstance(error, AuthenticationError):
+        return 'Authentication failed. Please contact support.'
+    elif isinstance(error, RateLimitError):
+        return 'Too many requests. Please try again later.'
+    elif isinstance(error, NetworkError):
+        return 'Network error. Please check your connection and try again.'
+    else:
+        return 'An unexpected error occurred. Please try again later.'
+```
+
+```php PHP
+<?php
+function getUserFriendlyMessage($error) {
+    if ($error instanceof ValidationError) {
+        return 'Please check your payment information and try again.';
+    } elseif ($error instanceof AuthenticationError) {
+        return 'Authentication failed. Please contact support.';
+    } elseif ($error instanceof RateLimitError) {
+        return 'Too many requests. Please try again later.';
+    } elseif ($error instanceof NetworkError) {
+        return 'Network error. Please check your connection and try again.';
+    } else {
+        return 'An unexpected error occurred. Please try again later.';
+    }
+}
+?>
+```
+</CodeGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Common Issues">
+  - **Authentication errors**: Verify API key and permissions
+  - **Validation errors**: Check request parameters and data types
+  - **Rate limit errors**: Implement proper retry logic
+  - **Network errors**: Check connectivity and timeout settings
+</Accordion>
+
+<Accordion title="Debug Tips">
+  - Enable detailed logging
+  - Test with small amounts first
+  - Use webhook testing tools
+  - Check API response codes and messages
+</Accordion>
+
+<Accordion title="Performance Issues">
+  - Implement connection pooling
+  - Use async/await for better performance
+  - Cache frequently accessed data
+  - Monitor response times
+</Accordion>
+</AccordionGroup>

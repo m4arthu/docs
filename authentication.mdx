@@ -1,0 +1,275 @@
+---
+title: "Authentication"
+description: "Learn how to authenticate with PinePay API using API keys and bearer tokens"
+---
+
+# Authentication
+
+PinePay API uses Bearer token authentication for secure access to all endpoints. This guide explains how to authenticate your requests and manage your API credentials.
+
+## API Keys
+
+Your API key is the primary method of authentication with PinePay API. You can find your API key in the [PinePay Dashboard](https://dashboard.pinepay.com) under the "API Keys" section.
+
+<Info>
+API keys are sensitive credentials. Keep them secure and never expose them in client-side code or public repositories.
+</Info>
+
+## Authentication Methods
+
+### Bearer Token Authentication
+
+Include your API key in the `Authorization` header of all requests:
+
+```bash
+Authorization: Bearer your_api_key_here
+```
+
+<CodeGroup>
+```javascript JavaScript
+const axios = require('axios');
+
+const apiClient = axios.create({
+  baseURL: 'https://api.pinepay.com',
+  headers: {
+    'Authorization': `Bearer ${process.env.PINEPAY_API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': f'Bearer {os.getenv("PINEPAY_API_KEY")}',
+    'Content-Type': 'application/json'
+}
+
+response = requests.get('https://api.pinepay.com/transactions', headers=headers)
+```
+
+```php PHP
+<?php
+$apiKey = $_ENV['PINEPAY_API_KEY'];
+$headers = [
+    'Authorization: Bearer ' . $apiKey,
+    'Content-Type: application/json'
+];
+
+$context = stream_context_create([
+    'http' => [
+        'header' => $headers,
+        'method' => 'GET'
+    ]
+]);
+?>
+```
+
+```curl cURL
+curl -X GET "https://api.pinepay.com/transactions" \
+  -H "Authorization: Bearer your_api_key_here" \
+  -H "Content-Type: application/json"
+```
+</CodeGroup>
+
+## API Key Management
+
+### Creating API Keys
+
+1. Log in to your [PinePay Dashboard](https://dashboard.pinepay.com)
+2. Navigate to "Settings" → "API Keys"
+3. Click "Create New API Key"
+4. Give your key a descriptive name
+5. Select the appropriate permissions
+6. Copy and securely store your API key
+
+<Warning>
+API keys are only shown once when created. Make sure to copy and store them securely.
+</Warning>
+
+### Key Permissions
+
+API keys can have different permission levels:
+
+<AccordionGroup>
+<Accordion title="Read Only">
+  - View transactions
+  - Check payment status
+  - Access statistics
+  - Read webhook history
+</Accordion>
+
+<Accordion title="Read/Write">
+  - All read permissions
+  - Create payments
+  - Generate QR codes
+  - Process refunds
+  - Manage webhooks
+</Accordion>
+
+<Accordion title="Admin">
+  - All read/write permissions
+  - Manage API keys
+  - Access system settings
+  - View audit logs
+</Accordion>
+</AccordionGroup>
+
+### Rotating API Keys
+
+For security best practices, rotate your API keys regularly:
+
+<Steps>
+<Step title="Create New Key">
+  Generate a new API key with the same permissions as your current key.
+</Step>
+
+<Step title="Update Applications">
+  Update all applications and services to use the new API key.
+</Step>
+
+<Step title="Test Integration">
+  Verify that all functionality works with the new key.
+</Step>
+
+<Step title="Revoke Old Key">
+  Once confirmed working, revoke the old API key.
+</Step>
+</Steps>
+
+## Security Best Practices
+
+### Environment Variables
+
+Store your API keys in environment variables, never in code:
+
+```bash .env
+PINEPAY_API_KEY=your_api_key_here
+PINEPAY_BASE_URL=https://api.pinepay.com
+```
+
+### IP Whitelisting
+
+For additional security, you can whitelist specific IP addresses:
+
+1. Go to "Settings" → "Security"
+2. Add your server IP addresses
+3. Enable IP whitelisting for your API key
+
+<Info>
+IP whitelisting is optional but recommended for production environments.
+</Info>
+
+### Request Signing
+
+For high-security applications, you can implement request signing:
+
+```javascript
+const crypto = require('crypto');
+
+const signRequest = (method, path, body, timestamp, apiSecret) => {
+  const message = `${method}${path}${body}${timestamp}`;
+  return crypto
+    .createHmac('sha256', apiSecret)
+    .update(message)
+    .digest('hex');
+};
+```
+
+## Error Handling
+
+### Authentication Errors
+
+<ResponseField name="401 Unauthorized" type="object">
+  Returned when the API key is missing, invalid, or expired.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Unauthorized",
+      "error": "Invalid API key"
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="403 Forbidden" type="object">
+  Returned when the API key doesn't have permission for the requested operation.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Forbidden",
+      "error": "Insufficient permissions"
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+### Rate Limiting
+
+API requests are rate limited to prevent abuse:
+
+- **Standard**: 100 requests per 15 minutes
+- **Premium**: 1000 requests per 15 minutes
+- **Enterprise**: Custom limits
+
+<ResponseField name="429 Too Many Requests" type="object">
+  Returned when rate limits are exceeded.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Too many requests",
+      "retryAfter": 900
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+## Testing Authentication
+
+You can test your authentication by making a simple request to the health endpoint:
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.pinepay.com/health" \
+  -H "Authorization: Bearer your_api_key_here"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "ok",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "version": "1.0.0"
+}
+```
+</ResponseExample>
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Invalid API Key">
+  - Verify the API key is correct and not expired
+  - Check for extra spaces or characters
+  - Ensure you're using the correct environment (sandbox vs production)
+</Accordion>
+
+<Accordion title="Permission Denied">
+  - Verify your API key has the required permissions
+  - Check if the endpoint requires specific access levels
+  - Contact support if you need permission upgrades
+</Accordion>
+
+<Accordion title="Rate Limit Exceeded">
+  - Implement exponential backoff in your retry logic
+  - Consider upgrading to a higher rate limit plan
+  - Cache responses when possible to reduce API calls
+</Accordion>
+</AccordionGroup>

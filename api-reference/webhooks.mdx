@@ -1,0 +1,399 @@
+---
+title: "Webhooks"
+description: "Handle real-time notifications for PIX payments, refunds, and transaction updates"
+---
+
+# Webhooks API
+
+Webhooks allow you to receive real-time notifications about PIX payments, refunds, and other transaction events. This section covers webhook configuration and event handling.
+
+## Webhook Events
+
+PinePay sends webhooks for the following events:
+
+<AccordionGroup>
+<Accordion title="Payment Events">
+  - **PAYMENT_RECEIVED** - A PIX payment was received
+  - **PAYMENT_COMPLETED** - A PIX payment was completed
+  - **PAYMENT_FAILED** - A PIX payment failed
+  - **PAYMENT_CANCELLED** - A PIX payment was cancelled
+</Accordion>
+
+<Accordion title="Refund Events">
+  - **REFUND_PROCESSING** - A refund is being processed
+  - **REFUND_COMPLETED** - A refund was completed
+  - **REFUND_FAILED** - A refund failed
+</Accordion>
+
+<Accordion title="QR Code Events">
+  - **QR_CODE_CREATED** - A PIX QR code was generated
+  - **QR_CODE_EXPIRED** - A PIX QR code expired
+  - **QR_CODE_PAID** - A PIX QR code was paid
+</Accordion>
+
+<Accordion title="Infraction Events">
+  - **INFRACTION_REPORTED** - A PIX infraction was reported
+  - **INFRACTION_ACKNOWLEDGED** - An infraction was acknowledged
+  - **INFRACTION_CLOSED** - An infraction was closed
+</Accordion>
+</AccordionGroup>
+
+## Webhook Payload Structure
+
+All webhooks follow a consistent payload structure:
+
+```json
+{
+  "type": "PAYMENT_RECEIVED",
+  "data": {
+    "transactionId": "tx_123456789",
+    "endToEndId": "E12345678202401151234567890",
+    "amount": 10.50,
+    "pixKey": "user@example.com",
+    "status": "completed",
+    "gateway": "woovi",
+    "externalId": "order_123",
+    "timestamp": "2024-01-15T10:30:00Z"
+  },
+  "timestamp": "2024-01-15T10:30:00Z",
+  "signature": "sha256=abc123..."
+}
+```
+
+## Payment Received Webhook
+
+Sent when a PIX payment is received and processed.
+
+<ResponseExample>
+```json PAYMENT_RECEIVED
+{
+  "type": "PAYMENT_RECEIVED",
+  "data": {
+    "transactionId": "tx_123456789",
+    "endToEndId": "E12345678202401151234567890",
+    "amount": 10.50,
+    "pixKey": "user@example.com",
+    "status": "completed",
+    "gateway": "woovi",
+    "externalId": "order_123",
+    "description": "Payment for order #123",
+    "payer": {
+      "name": "João Silva",
+      "document": "12345678901"
+    },
+    "timestamp": "2024-01-15T10:30:00Z"
+  },
+  "timestamp": "2024-01-15T10:30:00Z",
+  "signature": "sha256=abc123..."
+}
+```
+</ResponseExample>
+
+## Payment Failed Webhook
+
+Sent when a PIX payment fails.
+
+<ResponseExample>
+```json PAYMENT_FAILED
+{
+  "type": "PAYMENT_FAILED",
+  "data": {
+    "transactionId": "tx_123456789",
+    "endToEndId": "E12345678202401151234567890",
+    "amount": 10.50,
+    "pixKey": "user@example.com",
+    "status": "failed",
+    "gateway": "woovi",
+    "externalId": "order_123",
+    "error": {
+      "code": "INSUFFICIENT_FUNDS",
+      "message": "Insufficient funds in account"
+    },
+    "timestamp": "2024-01-15T10:30:00Z"
+  },
+  "timestamp": "2024-01-15T10:30:00Z",
+  "signature": "sha256=abc123..."
+}
+```
+</ResponseExample>
+
+## Refund Completed Webhook
+
+Sent when a PIX refund is completed.
+
+<ResponseExample>
+```json REFUND_COMPLETED
+{
+  "type": "REFUND_COMPLETED",
+  "data": {
+    "refundId": "ref_123456789",
+    "endToEndId": "E12345678202401151234567890",
+    "originalTransactionId": "tx_123456789",
+    "amount": 10.50,
+    "status": "completed",
+    "gateway": "woovi",
+    "externalId": "order_123",
+    "timestamp": "2024-01-15T10:30:00Z"
+  },
+  "timestamp": "2024-01-15T10:30:00Z",
+  "signature": "sha256=abc123..."
+}
+```
+</ResponseExample>
+
+## QR Code Paid Webhook
+
+Sent when a PIX QR code is paid.
+
+<ResponseExample>
+```json QR_CODE_PAID
+{
+  "type": "QR_CODE_PAID",
+  "data": {
+    "qrCodeId": "qr_123456789",
+    "transactionId": "tx_123456789",
+    "endToEndId": "E12345678202401151234567890",
+    "amount": 25.00,
+    "status": "paid",
+    "gateway": "woovi",
+    "externalId": "qr_123",
+    "payer": {
+      "name": "Maria Santos",
+      "document": "98765432100"
+    },
+    "timestamp": "2024-01-15T10:30:00Z"
+  },
+  "timestamp": "2024-01-15T10:30:00Z",
+  "signature": "sha256=abc123..."
+}
+```
+</ResponseExample>
+
+## Infraction Reported Webhook
+
+Sent when a PIX infraction is reported.
+
+<ResponseExample>
+```json INFRACTION_REPORTED
+{
+  "type": "INFRACTION_REPORTED",
+  "data": {
+    "infractionId": "inf_123456789",
+    "endToEndId": "E12345678202401151234567890",
+    "transactionId": "tx_123456789",
+    "amount": 10.50,
+    "status": "ACKNOWLEDGED",
+    "gateway": "treeal",
+    "externalId": "order_123",
+    "reportDetails": {
+      "reportedBy": "Banco do Brasil",
+      "reason": "Suspicious transaction pattern",
+      "creationDate": "2024-01-15T10:30:00Z"
+    },
+    "timestamp": "2024-01-15T10:30:00Z"
+  },
+  "timestamp": "2024-01-15T10:30:00Z",
+  "signature": "sha256=abc123..."
+}
+```
+</ResponseExample>
+
+## Webhook Security
+
+### Signature Verification
+
+All webhooks include a signature for verification. Verify the signature to ensure the webhook is from PinePay:
+
+<CodeGroup>
+```javascript Node.js
+const crypto = require('crypto');
+
+const verifyWebhookSignature = (payload, signature, secret) => {
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(signature.replace('sha256=', '')),
+    Buffer.from(expectedSignature)
+  );
+};
+
+// In your webhook handler
+app.post('/webhooks/pinepay', (req, res) => {
+  const signature = req.headers['x-pinepay-signature'];
+  const payload = JSON.stringify(req.body);
+  
+  if (!verifyWebhookSignature(payload, signature, process.env.WEBHOOK_SECRET)) {
+    return res.status(401).json({ error: 'Invalid signature' });
+  }
+  
+  // Process webhook
+  res.status(200).json({ received: true });
+});
+```
+
+```python Python
+import hmac
+import hashlib
+
+def verify_webhook_signature(payload, signature, secret):
+    expected_signature = hmac.new(
+        secret.encode('utf-8'),
+        payload.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+    
+    return hmac.compare_digest(signature.replace('sha256=', ''), expected_signature)
+
+# In your webhook handler
+@app.route('/webhooks/pinepay', methods=['POST'])
+def handle_webhook():
+    signature = request.headers.get('X-PinePay-Signature')
+    payload = request.get_data(as_text=True)
+    
+    if not verify_webhook_signature(payload, signature, os.getenv('WEBHOOK_SECRET')):
+        return jsonify({'error': 'Invalid signature'}), 401
+    
+    # Process webhook
+    return jsonify({'received': True})
+```
+
+```php PHP
+<?php
+function verifyWebhookSignature($payload, $signature, $secret) {
+    $expectedSignature = hash_hmac('sha256', $payload, $secret);
+    return hash_equals($signature, 'sha256=' . $expectedSignature);
+}
+
+// In your webhook handler
+$signature = $_SERVER['HTTP_X_PINEPAY_SIGNATURE'] ?? '';
+$payload = file_get_contents('php://input');
+
+if (!verifyWebhookSignature($payload, $signature, $_ENV['WEBHOOK_SECRET'])) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Invalid signature']);
+    exit;
+}
+
+// Process webhook
+echo json_encode(['received' => true]);
+?>
+```
+</CodeGroup>
+
+## Webhook Configuration
+
+### Setting Up Webhooks
+
+1. **Configure Webhook URL**: Set your webhook URL in the PinePay Dashboard
+2. **Verify Endpoint**: Ensure your endpoint returns 200 status for successful webhooks
+3. **Handle Retries**: Implement idempotency to handle duplicate webhooks
+4. **Monitor Delivery**: Check webhook delivery status in the dashboard
+
+### Webhook Headers
+
+PinePay sends the following headers with webhooks:
+
+<ParamField header="Content-Type" type="string">
+  Always `application/json`
+</ParamField>
+
+<ParamField header="X-PinePay-Signature" type="string">
+  HMAC-SHA256 signature for verification
+</ParamField>
+
+<ParamField header="X-PinePay-Event" type="string">
+  The event type (e.g., `PAYMENT_RECEIVED`)
+</ParamField>
+
+<ParamField header="X-PinePay-Delivery" type="string">
+  Unique delivery ID for tracking
+</ParamField>
+
+## Webhook Retry Policy
+
+PinePay implements the following retry policy for webhooks:
+
+- **Initial attempt**: Immediate
+- **Retry 1**: 1 minute after failure
+- **Retry 2**: 5 minutes after failure
+- **Retry 3**: 15 minutes after failure
+- **Retry 4**: 1 hour after failure
+- **Retry 5**: 6 hours after failure
+
+<Warning>
+Webhooks that fail after all retries are marked as failed and won't be retried again. Check your webhook delivery status regularly.
+</Warning>
+
+## Webhook Testing
+
+### Using ngrok for Local Testing
+
+<Steps>
+<Step title="Install ngrok">
+  Download and install ngrok from [ngrok.com](https://ngrok.com)
+</Step>
+
+<Step title="Start Your Server">
+  Start your local webhook server on port 3000
+</Step>
+
+<Step title="Expose with ngrok">
+  Run `ngrok http 3000` to get a public URL
+</Step>
+
+<Step title="Configure Webhook URL">
+  Use the ngrok URL as your webhook URL in PinePay Dashboard
+</Step>
+</Steps>
+
+### Webhook Testing Tools
+
+<CardGroup cols={2}>
+<Card title="Webhook.site" icon="globe" href="https://webhook.site">
+  Test webhook endpoints with a temporary URL
+</Card>
+
+<Card title="RequestBin" icon="code" href="https://requestbin.com">
+  Create temporary endpoints to inspect webhook payloads
+</Card>
+</CardGroup>
+
+## Error Handling
+
+### Common Webhook Errors
+
+<AccordionGroup>
+<Accordion title="Timeout Errors">
+  - Ensure your webhook endpoint responds within 30 seconds
+  - Implement async processing for long-running operations
+  - Use proper HTTP status codes (200 for success)
+</Accordion>
+
+<Accordion title="Signature Verification Failures">
+  - Verify you're using the correct webhook secret
+  - Ensure payload is not modified before verification
+  - Check that signature header is properly extracted
+</Accordion>
+
+<Accordion title="Duplicate Webhooks">
+  - Implement idempotency using the delivery ID
+  - Store processed webhook IDs to prevent duplicates
+  - Use database transactions for atomic operations
+</Accordion>
+</AccordionGroup>
+
+### Webhook Response Requirements
+
+Your webhook endpoint must:
+
+- Return HTTP 200 status for successful processing
+- Respond within 30 seconds
+- Handle duplicate deliveries gracefully
+- Log all webhook events for debugging
+
+<Check>
+Webhook endpoints that consistently return non-200 status codes will be disabled automatically.
+</Check>

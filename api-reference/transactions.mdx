@@ -1,0 +1,428 @@
+---
+title: "Transactions"
+description: "Manage PIX transactions, check status, and retrieve transaction history"
+---
+
+# Transactions API
+
+The Transactions API provides endpoints for managing PIX transactions, checking status, and retrieving transaction history. This section covers all transaction-related operations.
+
+## Get User Balance
+
+Retrieve the current balance for the authenticated user.
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.pinepay.com/api/balance" \
+  -H "Authorization: Bearer your_api_key_here"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "data": {
+    "balance": 1250.75,
+    "currency": "BRL",
+    "lastUpdated": "2024-01-15T10:30:00Z",
+    "pendingAmount": 50.00,
+    "availableAmount": 1200.75
+  }
+}
+```
+</ResponseExample>
+
+## Check Transaction Status
+
+Check the current status of a specific transaction.
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.pinepay.com/checkTransactionStatus" \
+  -H "Authorization: Bearer your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "endToEndId": "E12345678202401151234567890",
+    "txId": "tx_123456789"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "data": {
+    "transactionId": "tx_123456789",
+    "endToEndId": "E12345678202401151234567890",
+    "status": "completed",
+    "amount": 10.50,
+    "pixKey": "user@example.com",
+    "gateway": "woovi",
+    "externalId": "order_123",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "completedAt": "2024-01-15T10:35:00Z"
+  }
+}
+```
+</ResponseExample>
+
+### Parameters
+
+<ParamField body="endToEndId" type="string">
+The end-to-end identifier of the PIX transaction.
+</ParamField>
+
+<ParamField body="txId" type="string">
+The transaction ID from the payment gateway.
+</ParamField>
+
+<Note>
+Either `endToEndId` or `txId` is required to check transaction status.
+</Note>
+
+## Check Med Status
+
+Check the status of a medical transaction or health check.
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.pinepay.com/checkMedStatus" \
+  -H "Authorization: Bearer your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "medId": "med_123456789",
+    "externalId": "health_check_123"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "data": {
+    "medId": "med_123456789",
+    "status": "healthy",
+    "lastChecked": "2024-01-15T10:30:00Z",
+    "responseTime": 45,
+    "gateway": "woovi"
+  }
+}
+```
+</ResponseExample>
+
+### Parameters
+
+<ParamField body="medId" type="string" required>
+The medical transaction ID to check.
+</ParamField>
+
+<ParamField body="externalId" type="string">
+External reference ID for this health check.
+</ParamField>
+
+## Get Transaction History
+
+Retrieve a paginated list of transactions for the authenticated user.
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.pinepay.com/api/transactions?page=1&limit=20&status=completed&gateway=woovi" \
+  -H "Authorization: Bearer your_api_key_here"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "data": {
+    "transactions": [
+      {
+        "id": "tx_123456789",
+        "endToEndId": "E12345678202401151234567890",
+        "amount": 10.50,
+        "status": "completed",
+        "pixKey": "user@example.com",
+        "gateway": "woovi",
+        "externalId": "order_123",
+        "description": "Payment for order #123",
+        "createdAt": "2024-01-15T10:30:00Z",
+        "completedAt": "2024-01-15T10:35:00Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 150,
+      "totalPages": 8
+    }
+  }
+}
+```
+</ResponseExample>
+
+### Query Parameters
+
+<ParamField query="page" type="integer" default="1">
+Page number for pagination.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="20">
+Number of transactions per page (max 100).
+</ParamField>
+
+<ParamField query="status" type="string">
+Filter by transaction status: `pending`, `completed`, `failed`, `cancelled`.
+</ParamField>
+
+<ParamField query="gateway" type="string">
+Filter by payment gateway.
+</ParamField>
+
+<ParamField query="startDate" type="string">
+Filter transactions from this date (ISO 8601 format).
+</ParamField>
+
+<ParamField query="endDate" type="string">
+Filter transactions until this date (ISO 8601 format).
+</ParamField>
+
+## Get Transaction Details
+
+Get detailed information about a specific transaction.
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.pinepay.com/api/transactions/tx_123456789" \
+  -H "Authorization: Bearer your_api_key_here"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "data": {
+    "id": "tx_123456789",
+    "endToEndId": "E12345678202401151234567890",
+    "amount": 10.50,
+    "status": "completed",
+    "pixKey": "user@example.com",
+    "gateway": "woovi",
+    "externalId": "order_123",
+    "description": "Payment for order #123",
+    "payer": {
+      "name": "João Silva",
+      "document": "12345678901"
+    },
+    "timeline": [
+      {
+        "status": "created",
+        "timestamp": "2024-01-15T10:30:00Z"
+      },
+      {
+        "status": "processing",
+        "timestamp": "2024-01-15T10:32:00Z"
+      },
+      {
+        "status": "completed",
+        "timestamp": "2024-01-15T10:35:00Z"
+      }
+    ],
+    "createdAt": "2024-01-15T10:30:00Z",
+    "completedAt": "2024-01-15T10:35:00Z"
+  }
+}
+```
+</ResponseExample>
+
+### Parameters
+
+<ParamField path="transactionId" type="string" required>
+The ID of the transaction to retrieve.
+</ParamField>
+
+## Cancel Transaction
+
+Cancel a pending transaction.
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.pinepay.com/api/transactions/tx_123456789/cancel" \
+  -H "Authorization: Bearer your_api_key_here"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "message": "Transaction cancelled successfully",
+  "data": {
+    "transactionId": "tx_123456789",
+    "status": "cancelled",
+    "cancelledAt": "2024-01-15T10:45:00Z"
+  }
+}
+```
+</ResponseExample>
+
+### Parameters
+
+<ParamField path="transactionId" type="string" required>
+The ID of the transaction to cancel.
+</ParamField>
+
+## Get Transaction Statistics
+
+Retrieve transaction statistics for the authenticated user.
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.pinepay.com/api/transactions/statistics?startDate=2024-01-01&endDate=2024-01-31" \
+  -H "Authorization: Bearer your_api_key_here"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "data": {
+    "totalTransactions": 150,
+    "totalAmount": 15750.00,
+    "successfulTransactions": 145,
+    "failedTransactions": 5,
+    "averageAmount": 105.00,
+    "successRate": 96.67,
+    "period": {
+      "startDate": "2024-01-01",
+      "endDate": "2024-01-31"
+    },
+    "byGateway": {
+      "woovi": {
+        "count": 80,
+        "amount": 8400.00
+      },
+      "treeal": {
+        "count": 70,
+        "amount": 7350.00
+      }
+    }
+  }
+}
+```
+</ResponseExample>
+
+### Query Parameters
+
+<ParamField query="startDate" type="string">
+Start date for statistics in ISO 8601 format (YYYY-MM-DD).
+</ParamField>
+
+<ParamField query="endDate" type="string">
+End date for statistics in ISO 8601 format (YYYY-MM-DD).
+</ParamField>
+
+<ParamField query="gateway" type="string">
+Filter statistics by specific gateway.
+</ParamField>
+
+## Export Transactions
+
+Export transaction data in various formats.
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.pinepay.com/api/transactions/export" \
+  -H "Authorization: Bearer your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "startDate": "2024-01-01",
+    "endDate": "2024-01-31",
+    "format": "csv",
+    "fields": "id,amount,status,created_at",
+    "status": "completed"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "message": "Transaction data exported successfully",
+  "data": {
+    "exportId": "exp_123456789",
+    "downloadUrl": "https://api.pinepay.com/exports/exp_123456789/download",
+    "format": "csv",
+    "recordCount": 150,
+    "expiresAt": "2024-01-22T10:30:00Z"
+  }
+}
+```
+</ResponseExample>
+
+### Parameters
+
+<ParamField body="startDate" type="string">
+Start date for export in ISO 8601 format.
+</ParamField>
+
+<ParamField body="endDate" type="string">
+End date for export in ISO 8601 format.
+</ParamField>
+
+<ParamField body="format" type="string" default="json">
+Export format: `json`, `csv`, `xlsx`.
+</ParamField>
+
+<ParamField body="fields" type="string">
+Comma-separated list of fields to include in export.
+</ParamField>
+
+<ParamField body="status" type="string">
+Filter by transaction status.
+</ParamField>
+
+<ParamField body="gateway" type="string">
+Filter by payment gateway.
+</ParamField>
+
+## Error Responses
+
+<ResponseField name="404 Not Found" type="object">
+  Returned when a transaction is not found.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Transaction not found",
+      "error": "Transaction with ID tx_123456789 not found"
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="400 Bad Request" type="object">
+  Returned when request parameters are invalid.
+
+  <Expandable title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Validation failed",
+      "errors": [
+        {
+          "field": "transactionId",
+          "message": "Transaction ID is required"
+        }
+      ]
+    }
+    ```
+  </Expandable>
+</ResponseField>

@@ -1,0 +1,436 @@
+---
+title: "JavaScript SDK"
+description: "Official PinePay JavaScript SDK for Node.js and browser applications"
+---
+
+# JavaScript SDK
+
+The PinePay JavaScript SDK provides a simple and powerful way to integrate PIX payments into your JavaScript applications.
+
+## Installation
+
+<CodeGroup>
+```bash npm
+npm install @pinepay/sdk
+```
+
+```bash yarn
+yarn add @pinepay/sdk
+```
+
+```bash pnpm
+pnpm add @pinepay/sdk
+```
+</CodeGroup>
+
+## Quick Start
+
+```javascript
+const { PinePayClient } = require('@pinepay/sdk');
+
+// Initialize the client
+const client = new PinePayClient({
+  apiKey: process.env.PINEPAY_API_KEY,
+  environment: 'production' // or 'sandbox'
+});
+
+// Create a PIX payment
+const payment = await client.pix.createPayment({
+  amount: 10.50,
+  pixKey: 'user@example.com',
+  webhookUrl: 'https://your-domain.com/webhooks/pinepay',
+  externalId: 'order_123',
+  gateway: 'woovi',
+  description: 'Payment for order #123'
+});
+
+console.log('Payment created:', payment);
+```
+
+## Configuration
+
+### Environment Variables
+
+```bash .env
+PINEPAY_API_KEY=your_api_key_here
+PINEPAY_ENVIRONMENT=production
+PINEPAY_BASE_URL=https://api.pinepay.com
+```
+
+### Client Options
+
+```javascript
+const client = new PinePayClient({
+  apiKey: 'your_api_key_here',
+  environment: 'production', // 'production' or 'sandbox'
+  baseUrl: 'https://api.pinepay.com', // Optional, defaults to production URL
+  timeout: 30000, // Request timeout in milliseconds
+  retries: 3, // Number of retries for failed requests
+  retryDelay: 1000 // Delay between retries in milliseconds
+});
+```
+
+## PIX Payments
+
+### Create Payment
+
+```javascript
+const payment = await client.pix.createPayment({
+  amount: 10.50,
+  pixKey: 'user@example.com',
+  webhookUrl: 'https://your-domain.com/webhooks/pinepay',
+  externalId: 'order_123',
+  gateway: 'woovi',
+  description: 'Payment for order #123'
+});
+
+console.log('Transaction ID:', payment.data.transactionId);
+console.log('Status:', payment.data.status);
+```
+
+### Generate QR Code
+
+```javascript
+const qrCode = await client.pix.generateQrCode({
+  amount: 25.00,
+  webhookUrl: 'https://your-domain.com/webhooks/pinepay',
+  externalId: 'qr_123',
+  description: 'QR Code payment'
+});
+
+console.log('QR Code:', qrCode.data.qrCode);
+console.log('QR Code Image:', qrCode.data.qrCodeImage);
+```
+
+### Check Transaction Status
+
+```javascript
+const status = await client.pix.checkStatus({
+  txId: 'tx_123456789'
+});
+
+console.log('Transaction status:', status.data.status);
+```
+
+### Process Refund
+
+```javascript
+const refund = await client.pix.processRefund({
+  endToEndId: 'E12345678202401151234567890',
+  amount: 10.50
+});
+
+console.log('Refund ID:', refund.data.refundId);
+```
+
+## Webhooks
+
+### Webhook Handler
+
+```javascript
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+app.post('/webhooks/pinepay', (req, res) => {
+  const { type, data } = req.body;
+  
+  switch (type) {
+    case 'PAYMENT_RECEIVED':
+      console.log('Payment received:', data);
+      // Handle payment received
+      break;
+      
+    case 'PAYMENT_FAILED':
+      console.log('Payment failed:', data);
+      // Handle payment failure
+      break;
+      
+    case 'QR_CODE_PAID':
+      console.log('QR Code paid:', data);
+      // Handle QR code payment
+      break;
+      
+    default:
+      console.log('Unknown webhook type:', type);
+  }
+  
+  res.status(200).json({ received: true });
+});
+
+app.listen(3000, () => {
+  console.log('Webhook server running on port 3000');
+});
+```
+
+### Webhook Signature Verification
+
+```javascript
+const crypto = require('crypto');
+
+const verifyWebhookSignature = (payload, signature, secret) => {
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(signature.replace('sha256=', '')),
+    Buffer.from(expectedSignature)
+  );
+};
+
+app.post('/webhooks/pinepay', (req, res) => {
+  const signature = req.headers['x-pinepay-signature'];
+  const payload = JSON.stringify(req.body);
+  
+  if (!verifyWebhookSignature(payload, signature, process.env.WEBHOOK_SECRET)) {
+    return res.status(401).json({ error: 'Invalid signature' });
+  }
+  
+  // Process webhook safely
+  res.status(200).json({ received: true });
+});
+```
+
+## Error Handling
+
+### Custom Error Classes
+
+```javascript
+const { PinePayError, ValidationError, AuthenticationError, RateLimitError } = require('@pinepay/sdk');
+
+try {
+  const payment = await client.pix.createPayment(paymentData);
+} catch (error) {
+  if (error instanceof ValidationError) {
+    console.error('Validation error:', error.errors);
+  } else if (error instanceof AuthenticationError) {
+    console.error('Authentication failed');
+  } else if (error instanceof RateLimitError) {
+    console.error('Rate limit exceeded, retry after:', error.retryAfter);
+  } else {
+    console.error('Unexpected error:', error.message);
+  }
+}
+```
+
+### Retry Logic
+
+```javascript
+const client = new PinePayClient({
+  apiKey: process.env.PINEPAY_API_KEY,
+  retries: 3,
+  retryDelay: 1000
+});
+
+// The SDK will automatically retry failed requests
+const payment = await client.pix.createPayment(paymentData);
+```
+
+## Advanced Usage
+
+### Custom Headers
+
+```javascript
+const client = new PinePayClient({
+  apiKey: process.env.PINEPAY_API_KEY,
+  headers: {
+    'User-Agent': 'MyApp/1.0.0',
+    'X-Custom-Header': 'custom-value'
+  }
+});
+```
+
+### Request Interceptors
+
+```javascript
+const client = new PinePayClient({
+  apiKey: process.env.PINEPAY_API_KEY,
+  onRequest: (config) => {
+    console.log('Making request:', config.url);
+    return config;
+  },
+  onResponse: (response) => {
+    console.log('Response received:', response.status);
+    return response;
+  },
+  onError: (error) => {
+    console.error('Request failed:', error.message);
+    return error;
+  }
+});
+```
+
+### Batch Operations
+
+```javascript
+// Create multiple payments
+const payments = await Promise.all([
+  client.pix.createPayment({ amount: 10.00, pixKey: 'user1@example.com' }),
+  client.pix.createPayment({ amount: 20.00, pixKey: 'user2@example.com' }),
+  client.pix.createPayment({ amount: 30.00, pixKey: 'user3@example.com' })
+]);
+
+console.log('Created payments:', payments);
+```
+
+## TypeScript Support
+
+The SDK includes full TypeScript support:
+
+```typescript
+import { PinePayClient, PaymentData, PaymentResponse } from '@pinepay/sdk';
+
+const client = new PinePayClient({
+  apiKey: process.env.PINEPAY_API_KEY!
+});
+
+const paymentData: PaymentData = {
+  amount: 10.50,
+  pixKey: 'user@example.com',
+  webhookUrl: 'https://your-domain.com/webhooks/pinepay',
+  externalId: 'order_123',
+  gateway: 'woovi',
+  description: 'Payment for order #123'
+};
+
+const payment: PaymentResponse = await client.pix.createPayment(paymentData);
+```
+
+## Browser Usage
+
+For browser applications, use the CDN version:
+
+```html
+<script src="https://cdn.pinepay.com/sdk/latest/pinepay.min.js"></script>
+<script>
+  const client = new PinePayClient({
+    apiKey: 'your_api_key_here',
+    environment: 'production'
+  });
+
+  // Use the client
+  client.pix.createPayment({
+    amount: 10.50,
+    pixKey: 'user@example.com',
+    webhookUrl: 'https://your-domain.com/webhooks/pinepay',
+    externalId: 'order_123',
+    gateway: 'woovi',
+    description: 'Payment for order #123'
+  }).then(payment => {
+    console.log('Payment created:', payment);
+  });
+</script>
+```
+
+## Examples
+
+### E-commerce Integration
+
+```javascript
+const express = require('express');
+const app = express();
+
+app.post('/checkout', async (req, res) => {
+  try {
+    const { amount, customerEmail } = req.body;
+    
+    const payment = await client.pix.createPayment({
+      amount: amount,
+      pixKey: customerEmail,
+      webhookUrl: 'https://your-domain.com/webhooks/pinepay',
+      externalId: `order_${Date.now()}`,
+      gateway: 'woovi',
+      description: `Payment for order ${Date.now()}`
+    });
+    
+    res.json({
+      success: true,
+      payment: payment.data
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+```
+
+### Subscription Billing
+
+```javascript
+const createSubscriptionPayment = async (subscriptionId, amount) => {
+  try {
+    const payment = await client.pix.createPayment({
+      amount: amount,
+      pixKey: 'subscription@example.com',
+      webhookUrl: 'https://your-domain.com/webhooks/pinepay',
+      externalId: `subscription_${subscriptionId}`,
+      gateway: 'woovi',
+      description: `Monthly subscription payment`
+    });
+    
+    return payment;
+  } catch (error) {
+    console.error('Subscription payment failed:', error);
+    throw error;
+  }
+};
+```
+
+## API Reference
+
+### PinePayClient
+
+<ParamField name="apiKey" type="string" required>
+Your PinePay API key
+</ParamField>
+
+<ParamField name="environment" type="string" default="production">
+Environment: 'production' or 'sandbox'
+</ParamField>
+
+<ParamField name="baseUrl" type="string">
+Custom base URL for the API
+</ParamField>
+
+<ParamField name="timeout" type="number" default="30000">
+Request timeout in milliseconds
+</ParamField>
+
+<ParamField name="retries" type="number" default="3">
+Number of retries for failed requests
+</ParamField>
+
+<ParamField name="retryDelay" type="number" default="1000">
+Delay between retries in milliseconds
+</ParamField>
+
+### Methods
+
+<ResponseField name="pix.createPayment" type="function">
+Create a new PIX payment
+</ResponseField>
+
+<ResponseField name="pix.generateQrCode" type="function">
+Generate a PIX QR code
+</ResponseField>
+
+<ResponseField name="pix.checkStatus" type="function">
+Check transaction status
+</ResponseField>
+
+<ResponseField name="pix.processRefund" type="function">
+Process a PIX refund
+</ResponseField>
+
+<ResponseField name="pix.getTransactions" type="function">
+Get user transactions
+</ResponseField>
+
+<ResponseField name="pix.getStatistics" type="function">
+Get transaction statistics
+</ResponseField>

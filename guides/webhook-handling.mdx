@@ -1,0 +1,745 @@
+---
+title: "Webhook Handling Guide"
+description: "Complete guide to handling PinePay webhooks securely and reliably"
+---
+
+# Webhook Handling Guide
+
+Webhooks are essential for real-time payment processing. This guide covers everything you need to know about handling PinePay webhooks securely and reliably.
+
+## What are Webhooks?
+
+Webhooks are HTTP callbacks that PinePay sends to your application when specific events occur, such as payment completions, failures, or refunds. They allow you to receive real-time notifications without polling the API.
+
+## Webhook Security
+
+### Signature Verification
+
+All PinePay webhooks include a signature for verification. Always verify the signature to ensure the webhook is authentic:
+
+<CodeGroup>
+```javascript Node.js
+const crypto = require('crypto');
+
+const verifyWebhookSignature = (payload, signature, secret) => {
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(signature.replace('sha256=', '')),
+    Buffer.from(expectedSignature)
+  );
+};
+
+// In your webhook handler
+app.post('/webhooks/pinepay', (req, res) => {
+  const signature = req.headers['x-pinepay-signature'];
+  const payload = JSON.stringify(req.body);
+  
+  if (!verifyWebhookSignature(payload, signature, process.env.WEBHOOK_SECRET)) {
+    return res.status(401).json({ error: 'Invalid signature' });
+  }
+  
+  // Process webhook safely
+  res.status(200).json({ received: true });
+});
+```
+
+```python Python
+import hmac
+import hashlib
+
+def verify_webhook_signature(payload, signature, secret):
+    expected_signature = hmac.new(
+        secret.encode('utf-8'),
+        payload.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+    
+    return hmac.compare_digest(signature.replace('sha256=', ''), expected_signature)
+
+# In your webhook handler
+@app.route('/webhooks/pinepay', methods=['POST'])
+def handle_webhook():
+    signature = request.headers.get('X-PinePay-Signature')
+    payload = request.get_data(as_text=True)
+    
+    if not verify_webhook_signature(payload, signature, os.getenv('WEBHOOK_SECRET')):
+        return jsonify({'error': 'Invalid signature'}), 401
+    
+    # Process webhook safely
+    return jsonify({'received': True})
+```
+
+```php PHP
+<?php
+function verifyWebhookSignature($payload, $signature, $secret) {
+    $expectedSignature = hash_hmac('sha256', $payload, $secret);
+    return hash_equals($signature, 'sha256=' . $expectedSignature);
+}
+
+// In your webhook handler
+$signature = $_SERVER['HTTP_X_PINEPAY_SIGNATURE'] ?? '';
+$payload = file_get_contents('php://input');
+
+if (!verifyWebhookSignature($payload, $signature, $_ENV['WEBHOOK_SECRET'])) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Invalid signature']);
+    exit;
+}
+
+// Process webhook safely
+http_response_code(200);
+echo json_encode(['received' => true]);
+?>
+```
+</CodeGroup>
+
+<Warning>
+Never process webhooks without signature verification. This is a critical security requirement.
+</Warning>
+
+## Webhook Events
+
+### Payment Events
+
+<AccordionGroup>
+<Accordion title="PAYMENT_RECEIVED">
+  Sent when a PIX payment is received and processed successfully.
+
+  ```json
+  {
+    "type": "PAYMENT_RECEIVED",
+    "data": {
+      "transactionId": "tx_123456789",
+      "endToEndId": "E12345678202401151234567890",
+      "amount": 10.50,
+      "pixKey": "user@example.com",
+      "status": "completed",
+      "gateway": "woovi",
+      "externalId": "order_123",
+      "payer": {
+        "name": "João Silva",
+        "document": "12345678901"
+      },
+      "timestamp": "2024-01-15T10:30:00Z"
+    }
+  }
+  ```
+</Accordion>
+
+<Accordion title="PAYMENT_FAILED">
+  Sent when a PIX payment fails.
+
+  ```json
+  {
+    "type": "PAYMENT_FAILED",
+    "data": {
+      "transactionId": "tx_123456789",
+      "endToEndId": "E12345678202401151234567890",
+      "amount": 10.50,
+      "pixKey": "user@example.com",
+      "status": "failed",
+      "gateway": "woovi",
+      "externalId": "order_123",
+      "error": {
+        "code": "INSUFFICIENT_FUNDS",
+        "message": "Insufficient funds in account"
+      },
+      "timestamp": "2024-01-15T10:30:00Z"
+    }
+  }
+  ```
+</Accordion>
+
+<Accordion title="PAYMENT_CANCELLED">
+  Sent when a PIX payment is cancelled.
+
+  ```json
+  {
+    "type": "PAYMENT_CANCELLED",
+    "data": {
+      "transactionId": "tx_123456789",
+      "endToEndId": "E12345678202401151234567890",
+      "amount": 10.50,
+      "pixKey": "user@example.com",
+      "status": "cancelled",
+      "gateway": "woovi",
+      "externalId": "order_123",
+      "timestamp": "2024-01-15T10:30:00Z"
+    }
+  }
+  ```
+</Accordion>
+</AccordionGroup>
+
+### QR Code Events
+
+<AccordionGroup>
+<Accordion title="QR_CODE_CREATED">
+  Sent when a PIX QR code is generated.
+
+  ```json
+  {
+    "type": "QR_CODE_CREATED",
+    "data": {
+      "qrCodeId": "qr_123456789",
+      "amount": 25.00,
+      "status": "active",
+      "externalId": "qr_123",
+      "qrCode": "00020126580014br.gov.bcb.pix...",
+      "expiresAt": "2024-01-15T11:30:00Z",
+      "timestamp": "2024-01-15T10:30:00Z"
+    }
+  }
+  ```
+</Accordion>
+
+<Accordion title="QR_CODE_PAID">
+  Sent when a PIX QR code is paid.
+
+  ```json
+  {
+    "type": "QR_CODE_PAID",
+    "data": {
+      "qrCodeId": "qr_123456789",
+      "transactionId": "tx_123456789",
+      "endToEndId": "E12345678202401151234567890",
+      "amount": 25.00,
+      "status": "paid",
+      "externalId": "qr_123",
+      "payer": {
+        "name": "Maria Santos",
+        "document": "98765432100"
+      },
+      "timestamp": "2024-01-15T10:30:00Z"
+    }
+  }
+  ```
+</Accordion>
+
+<Accordion title="QR_CODE_EXPIRED">
+  Sent when a PIX QR code expires.
+
+  ```json
+  {
+    "type": "QR_CODE_EXPIRED",
+    "data": {
+      "qrCodeId": "qr_123456789",
+      "amount": 25.00,
+      "status": "expired",
+      "externalId": "qr_123",
+      "expiredAt": "2024-01-15T11:30:00Z",
+      "timestamp": "2024-01-15T11:30:00Z"
+    }
+  }
+  ```
+</Accordion>
+</AccordionGroup>
+
+### Refund Events
+
+<AccordionGroup>
+<Accordion title="REFUND_PROCESSING">
+  Sent when a refund is being processed.
+
+  ```json
+  {
+    "type": "REFUND_PROCESSING",
+    "data": {
+      "refundId": "ref_123456789",
+      "endToEndId": "E12345678202401151234567890",
+      "originalTransactionId": "tx_123456789",
+      "amount": 10.50,
+      "status": "processing",
+      "gateway": "woovi",
+      "externalId": "order_123",
+      "timestamp": "2024-01-15T10:30:00Z"
+    }
+  }
+  ```
+</Accordion>
+
+<Accordion title="REFUND_COMPLETED">
+  Sent when a refund is completed.
+
+  ```json
+  {
+    "type": "REFUND_COMPLETED",
+    "data": {
+      "refundId": "ref_123456789",
+      "endToEndId": "E12345678202401151234567890",
+      "originalTransactionId": "tx_123456789",
+      "amount": 10.50,
+      "status": "completed",
+      "gateway": "woovi",
+      "externalId": "order_123",
+      "timestamp": "2024-01-15T10:30:00Z"
+    }
+  }
+  ```
+</Accordion>
+
+<Accordion title="REFUND_FAILED">
+  Sent when a refund fails.
+
+  ```json
+  {
+    "type": "REFUND_FAILED",
+    "data": {
+      "refundId": "ref_123456789",
+      "endToEndId": "E12345678202401151234567890",
+      "originalTransactionId": "tx_123456789",
+      "amount": 10.50,
+      "status": "failed",
+      "gateway": "woovi",
+      "externalId": "order_123",
+      "error": {
+        "code": "REFUND_NOT_ALLOWED",
+        "message": "Refund not allowed for this transaction"
+      },
+      "timestamp": "2024-01-15T10:30:00Z"
+    }
+  }
+  ```
+</Accordion>
+</AccordionGroup>
+
+## Webhook Implementation
+
+### Basic Webhook Handler
+
+<CodeGroup>
+```javascript Node.js
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+app.post('/webhooks/pinepay', (req, res) => {
+  const { type, data } = req.body;
+  
+  try {
+    switch (type) {
+      case 'PAYMENT_RECEIVED':
+        handlePaymentReceived(data);
+        break;
+        
+      case 'PAYMENT_FAILED':
+        handlePaymentFailed(data);
+        break;
+        
+      case 'QR_CODE_PAID':
+        handleQrCodePaid(data);
+        break;
+        
+      case 'REFUND_COMPLETED':
+        handleRefundCompleted(data);
+        break;
+        
+      default:
+        console.log('Unknown webhook type:', type);
+    }
+    
+    res.status(200).json({ received: true });
+  } catch (error) {
+    console.error('Webhook processing error:', error);
+    res.status(500).json({ error: 'Processing failed' });
+  }
+});
+
+function handlePaymentReceived(data) {
+  console.log('Payment received:', data);
+  // Update database, send confirmation email, etc.
+}
+
+function handlePaymentFailed(data) {
+  console.log('Payment failed:', data);
+  // Handle failed payment, notify user, etc.
+}
+
+function handleQrCodePaid(data) {
+  console.log('QR Code paid:', data);
+  // Process QR code payment
+}
+
+function handleRefundCompleted(data) {
+  console.log('Refund completed:', data);
+  // Update database, notify user, etc.
+}
+
+app.listen(3000, () => {
+  console.log('Webhook server running on port 3000');
+});
+```
+
+```python Python
+from flask import Flask, request, jsonify
+import json
+
+app = Flask(__name__)
+
+@app.route('/webhooks/pinepay', methods=['POST'])
+def handle_webhook():
+    data = request.get_json()
+    webhook_type = data.get('type')
+    
+    try:
+        if webhook_type == 'PAYMENT_RECEIVED':
+            handle_payment_received(data.get('data'))
+        elif webhook_type == 'PAYMENT_FAILED':
+            handle_payment_failed(data.get('data'))
+        elif webhook_type == 'QR_CODE_PAID':
+            handle_qr_code_paid(data.get('data'))
+        elif webhook_type == 'REFUND_COMPLETED':
+            handle_refund_completed(data.get('data'))
+        else:
+            print(f'Unknown webhook type: {webhook_type}')
+        
+        return jsonify({'received': True})
+    except Exception as e:
+        print(f'Webhook processing error: {e}')
+        return jsonify({'error': 'Processing failed'}), 500
+
+def handle_payment_received(data):
+    print(f'Payment received: {data}')
+    # Update database, send confirmation email, etc.
+
+def handle_payment_failed(data):
+    print(f'Payment failed: {data}')
+    # Handle failed payment, notify user, etc.
+
+def handle_qr_code_paid(data):
+    print(f'QR Code paid: {data}')
+    # Process QR code payment
+
+def handle_refund_completed(data):
+    print(f'Refund completed: {data}')
+    # Update database, notify user, etc.
+
+if __name__ == '__main__':
+    app.run(port=3000)
+```
+
+```php PHP
+<?php
+// webhook.php
+$input = file_get_contents('php://input');
+$data = json_decode($input, true);
+
+$webhookType = $data['type'] ?? '';
+
+try {
+    switch ($webhookType) {
+        case 'PAYMENT_RECEIVED':
+            handlePaymentReceived($data['data']);
+            break;
+            
+        case 'PAYMENT_FAILED':
+            handlePaymentFailed($data['data']);
+            break;
+            
+        case 'QR_CODE_PAID':
+            handleQrCodePaid($data['data']);
+            break;
+            
+        case 'REFUND_COMPLETED':
+            handleRefundCompleted($data['data']);
+            break;
+            
+        default:
+            error_log('Unknown webhook type: ' . $webhookType);
+    }
+    
+    http_response_code(200);
+    echo json_encode(['received' => true]);
+} catch (Exception $e) {
+    error_log('Webhook processing error: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'Processing failed']);
+}
+
+function handlePaymentReceived($data) {
+    error_log('Payment received: ' . json_encode($data));
+    // Update database, send confirmation email, etc.
+}
+
+function handlePaymentFailed($data) {
+    error_log('Payment failed: ' . json_encode($data));
+    // Handle failed payment, notify user, etc.
+}
+
+function handleQrCodePaid($data) {
+    error_log('QR Code paid: ' . json_encode($data));
+    // Process QR code payment
+}
+
+function handleRefundCompleted($data) {
+    error_log('Refund completed: ' . json_encode($data));
+    // Update database, notify user, etc.
+}
+?>
+```
+</CodeGroup>
+
+### Advanced Webhook Handler with Idempotency
+
+<CodeGroup>
+```javascript Node.js
+const express = require('express');
+const { v4: uuidv4 } = require('uuid');
+const app = express();
+
+// Store processed webhook IDs (use Redis in production)
+const processedWebhooks = new Set();
+
+app.use(express.json());
+
+app.post('/webhooks/pinepay', async (req, res) => {
+  const deliveryId = req.headers['x-pinepay-delivery'];
+  const { type, data } = req.body;
+  
+  // Check for duplicate webhooks
+  if (processedWebhooks.has(deliveryId)) {
+    return res.status(200).json({ received: true, duplicate: true });
+  }
+  
+  try {
+    // Process webhook
+    await processWebhook(type, data);
+    
+    // Mark as processed
+    processedWebhooks.add(deliveryId);
+    
+    res.status(200).json({ received: true });
+  } catch (error) {
+    console.error('Webhook processing error:', error);
+    res.status(500).json({ error: 'Processing failed' });
+  }
+});
+
+async function processWebhook(type, data) {
+  // Add your webhook processing logic here
+  console.log(`Processing webhook: ${type}`, data);
+}
+```
+
+```python Python
+from flask import Flask, request, jsonify
+import redis
+import json
+
+app = Flask(__name__)
+redis_client = redis.Redis(host='localhost', port=6379, db=0)
+
+@app.route('/webhooks/pinepay', methods=['POST'])
+def handle_webhook():
+    delivery_id = request.headers.get('X-PinePay-Delivery')
+    data = request.get_json()
+    webhook_type = data.get('type')
+    
+    # Check for duplicate webhooks
+    if redis_client.get(f'webhook:{delivery_id}'):
+        return jsonify({'received': True, 'duplicate': True})
+    
+    try:
+        # Process webhook
+        process_webhook(webhook_type, data.get('data'))
+        
+        # Mark as processed (expires in 24 hours)
+        redis_client.setex(f'webhook:{delivery_id}', 86400, 'processed')
+        
+        return jsonify({'received': True})
+    except Exception as e:
+        print(f'Webhook processing error: {e}')
+        return jsonify({'error': 'Processing failed'}), 500
+
+def process_webhook(webhook_type, data):
+    # Add your webhook processing logic here
+    print(f'Processing webhook: {webhook_type}', data)
+```
+
+```php PHP
+<?php
+// webhook.php
+$deliveryId = $_SERVER['HTTP_X_PINEPAY_DELIVERY'] ?? '';
+$input = file_get_contents('php://input');
+$data = json_decode($input, true);
+
+// Check for duplicate webhooks (use Redis in production)
+$redis = new Redis();
+$redis->connect('localhost', 6379);
+
+if ($redis->get("webhook:{$deliveryId}")) {
+    http_response_code(200);
+    echo json_encode(['received' => true, 'duplicate' => true]);
+    exit;
+}
+
+try {
+    // Process webhook
+    processWebhook($data['type'], $data['data']);
+    
+    // Mark as processed (expires in 24 hours)
+    $redis->setex("webhook:{$deliveryId}", 86400, 'processed');
+    
+    http_response_code(200);
+    echo json_encode(['received' => true]);
+} catch (Exception $e) {
+    error_log('Webhook processing error: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'Processing failed']);
+}
+
+function processWebhook($type, $data) {
+    // Add your webhook processing logic here
+    error_log("Processing webhook: {$type} " . json_encode($data));
+}
+?>
+```
+</CodeGroup>
+
+## Webhook Testing
+
+### Local Development with ngrok
+
+<Steps>
+<Step title="Install ngrok">
+  Download and install ngrok from [ngrok.com](https://ngrok.com)
+</Step>
+
+<Step title="Start Your Server">
+  Start your local webhook server on port 3000
+</Step>
+
+<Step title="Expose with ngrok">
+  Run `ngrok http 3000` to get a public URL
+</Step>
+
+<Step title="Configure Webhook URL">
+  Use the ngrok URL as your webhook URL in PinePay Dashboard
+</Step>
+
+<Step title="Test Webhooks">
+  Create test payments to trigger webhooks
+</Step>
+</Steps>
+
+### Webhook Testing Tools
+
+<CardGroup cols={2}>
+<Card title="Webhook.site" icon="globe" href="https://webhook.site">
+  Test webhook endpoints with a temporary URL
+</Card>
+
+<Card title="RequestBin" icon="code" href="https://requestbin.com">
+  Create temporary endpoints to inspect webhook payloads
+</Card>
+
+<Card title="ngrok" icon="terminal" href="https://ngrok.com">
+  Expose local servers for webhook testing
+</Card>
+
+<Card title="Postman" icon="api" href="https://postman.com">
+  Test webhook endpoints with mock requests
+</Card>
+</CardGroup>
+
+## Webhook Retry Policy
+
+PinePay implements the following retry policy for webhooks:
+
+- **Initial attempt**: Immediate
+- **Retry 1**: 1 minute after failure
+- **Retry 2**: 5 minutes after failure
+- **Retry 3**: 15 minutes after failure
+- **Retry 4**: 1 hour after failure
+- **Retry 5**: 6 hours after failure
+
+<Warning>
+Webhooks that fail after all retries are marked as failed and won't be retried again. Check your webhook delivery status regularly.
+</Warning>
+
+## Best Practices
+
+### Webhook Endpoint Requirements
+
+Your webhook endpoint must:
+
+- Return HTTP 200 status for successful processing
+- Respond within 30 seconds
+- Handle duplicate deliveries gracefully
+- Log all webhook events for debugging
+
+<Check>
+Webhook endpoints that consistently return non-200 status codes will be disabled automatically.
+</Check>
+
+### Error Handling
+
+<AccordionGroup>
+<Accordion title="Timeout Errors">
+  - Ensure your webhook endpoint responds within 30 seconds
+  - Implement async processing for long-running operations
+  - Use proper HTTP status codes (200 for success)
+</Accordion>
+
+<Accordion title="Signature Verification Failures">
+  - Verify you're using the correct webhook secret
+  - Ensure payload is not modified before verification
+  - Check that signature header is properly extracted
+</Accordion>
+
+<Accordion title="Duplicate Webhooks">
+  - Implement idempotency using the delivery ID
+  - Store processed webhook IDs to prevent duplicates
+  - Use database transactions for atomic operations
+</Accordion>
+</AccordionGroup>
+
+### Monitoring and Alerting
+
+<Steps>
+<Step title="Set Up Monitoring">
+  Monitor webhook delivery success rates and response times
+</Step>
+
+<Step title="Configure Alerts">
+  Set up alerts for webhook failures and high error rates
+</Step>
+
+<Step title="Log Analysis">
+  Implement comprehensive logging for webhook events
+</Step>
+
+<Step title="Health Checks">
+  Regular health checks on your webhook endpoints
+</Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Webhook Not Received">
+  - Check if your endpoint is publicly accessible
+  - Verify HTTPS is enabled (required for production)
+  - Ensure your server is running and responding
+  - Check firewall and network configuration
+</Accordion>
+
+<Accordion title="Signature Verification Failing">
+  - Verify webhook secret is correct
+  - Check payload is not modified before verification
+  - Ensure signature header is properly extracted
+  - Test with webhook testing tools
+</Accordion>
+
+<Accordion title="Duplicate Webhooks">
+  - Implement idempotency using delivery ID
+  - Store processed webhook IDs
+  - Use database transactions for atomic operations
+  - Handle retry scenarios gracefully
+</Accordion>
+</AccordionGroup>

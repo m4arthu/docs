@@ -1,0 +1,97 @@
+---
+title: "Introduction to PinePay API"
+description: "Learn about PinePay's powerful PIX payment processing API with multi-gateway support"
+---
+
+# Welcome to PinePay API
+
+PinePay is a comprehensive PIX payment processing API that provides seamless integration with multiple payment gateways in Brazil. Our API enables you to accept PIX payments, process refunds, handle webhooks, and manage transactions with enterprise-grade reliability.
+
+## What is PinePay?
+
+PinePay is a unified API that abstracts the complexity of multiple PIX payment gateways, providing you with a single integration point for all your payment processing needs. Whether you're building an e-commerce platform, SaaS application, or fintech solution, PinePay simplifies PIX payment integration.
+
+## Key Features
+
+<CardGroup cols={2}>
+<Card title="Multi-Gateway Support" icon="layers">
+  Integrate with 10+ payment gateways including Woovi, Treeal, Voluti, EFI, and more
+</Card>
+
+<Card title="Real-time Webhooks" icon="zap">
+  Receive instant notifications for payment status changes and transaction updates
+</Card>
+
+<Card title="Queue Processing" icon="clock">
+  Reliable background processing with RabbitMQ for high-volume transactions
+</Card>
+
+<Card title="Enterprise Security" icon="shield">
+  Bank-grade security with IP validation, rate limiting, and comprehensive logging
+</Card>
+</CardGroup>
+
+## Supported Gateways
+
+PinePay supports integration with the following payment gateways:
+
+- **Woovi** - OpenPix integration for instant PIX payments
+- **Treeal** - Advanced PIX processing with fraud detection
+- **Voluti** - High-performance PIX gateway
+- **EFI** - Efi Bank PIX integration
+- **PlayShark** - Gaming-focused payment processing
+- **Pluggou** - Modern PIX payment solutions
+- **BancoE2** - Banking-grade PIX processing
+- **PrimePag** - E-commerce PIX solutions
+- **WePayments** - Multi-channel payment processing
+- **XGate** - Enterprise PIX gateway
+
+## Architecture Overview
+
+<Frame>
+<img src="/images/architecture.png" alt="PinePay API Architecture showing request flow through gateways" />
+</Frame>
+
+PinePay API follows a microservices architecture with the following components:
+
+- **API Gateway** - Main API server handling requests and authentication
+- **Queue System** - RabbitMQ-based background processing
+- **Database Layer** - MySQL/PostgreSQL for transaction storage
+- **Cache Layer** - Redis for high-performance caching
+- **Monitoring** - Sentry integration for error tracking and performance monitoring
+
+## Getting Started
+
+Ready to start integrating PIX payments? Here's what you need to know:
+
+<Steps>
+<Step title="Get API Credentials">
+  Sign up for a PinePay account and obtain your API key from the dashboard.
+</Step>
+
+<Step title="Choose Your Gateway">
+  Select the payment gateway that best fits your business needs.
+</Step>
+
+<Step title="Make Your First Request">
+  Use our simple REST API to create your first PIX payment.
+</Step>
+
+<Step title="Handle Webhooks">
+  Set up webhook endpoints to receive real-time payment notifications.
+</Step>
+</Steps>
+
+## What's Next?
+
+<Card title="Quick Start Guide" icon="rocket" href="/quickstart">
+Get up and running with PinePay in under 10 minutes with our step-by-step integration guide.
+</Card>
+
+<Card title="API Reference" icon="code" href="/api-reference">
+Explore our comprehensive API documentation with examples and code snippets.
+</Card>
+
+<Card title="SDKs" icon="package" href="/sdks">
+Use our official SDKs for JavaScript, PHP, and Python to speed up your integration.
+</Card>
