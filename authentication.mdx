@@ -1,91 +1,153 @@
 ---
 title: "Authentication"
-description: "Learn how to authenticate with PinePay API using API keys and bearer tokens"
+description: "Learn how to authenticate with PinePay API using OAuth 2.0 client credentials flow"
 ---
 
 # Authentication
 
-PinePay API uses Bearer token authentication for secure access to all endpoints. This guide explains how to authenticate your requests and manage your API credentials.
+PinePay API uses OAuth 2.0 client credentials flow for secure access to all endpoints. This guide explains how to authenticate your requests and manage your API credentials.
 
-## API Keys
+## Client Credentials
 
-Your API key is the primary method of authentication with PinePay API. You can find your API key in the [PinePay Dashboard](https://dashboard.pinepay.com) under the "API Keys" section.
+Your client credentials (client ID and client secret) are used to obtain access tokens. You can find your credentials in the [PinePay Dashboard](https://dashboard.pinepay.com) under the "API Keys" section.
 
 <Info>
-API keys are sensitive credentials. Keep them secure and never expose them in client-side code or public repositories.
+Client credentials are sensitive. Keep them secure and never expose them in client-side code or public repositories.
 </Info>
 
 ## Authentication Methods
 
-### Bearer Token Authentication
+### OAuth 2.0 Client Credentials Flow
 
-Include your API key in the `Authorization` header of all requests:
+To authenticate with PinePay API, you need to:
+
+1. **Obtain an access token** by making a POST request to `/auth/token` with Basic Auth
+2. **Use the access token** in subsequent API requests as a Bearer token
+
+#### Step 1: Get Access Token
+
+Make a POST request to `/auth/token` with Basic Authentication using your client credentials:
 
 ```bash
-Authorization: Bearer your_api_key_here
+Authorization: Basic base64(clientId:clientSecret)
 ```
 
 <CodeGroup>
 ```javascript JavaScript
 const axios = require('axios');
+const crypto = require('crypto');
 
+// Step 1: Get access token
+const getAccessToken = async () => {
+  const clientId = process.env.PINEPAY_CLIENT_ID;
+  const clientSecret = process.env.PINEPAY_CLIENT_SECRET;
+  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+  
+  const response = await axios.post('https://api.pinepay.com/auth/token', {}, {
+    headers: {
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  return response.data.access_token;
+};
+
+// Step 2: Use access token for API calls
 const apiClient = axios.create({
   baseURL: 'https://api.pinepay.com',
   headers: {
-    'Authorization': `Bearer ${process.env.PINEPAY_API_KEY}`,
     'Content-Type': 'application/json'
   }
+});
+
+// Add token to requests
+apiClient.interceptors.request.use(async (config) => {
+  const token = await getAccessToken();
+  config.headers.Authorization = `Bearer ${token}`;
+  return config;
 });
 ```
 
 ```python Python
 import requests
+import base64
+import os
 
+def get_access_token():
+    client_id = os.getenv('PINEPAY_CLIENT_ID')
+    client_secret = os.getenv('PINEPAY_CLIENT_SECRET')
+    credentials = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
+    
+    response = requests.post('https://api.pinepay.com/auth/token', 
+                           headers={'Authorization': f'Basic {credentials}'})
+    return response.json()['access_token']
+
+# Use the token for API calls
+token = get_access_token()
 headers = {
-    'Authorization': f'Bearer {os.getenv("PINEPAY_API_KEY")}',
+    'Authorization': f'Bearer {token}',
     'Content-Type': 'application/json'
 }
-
 response = requests.get('https://api.pinepay.com/transactions', headers=headers)
 ```
 
 ```php PHP
 <?php
-$apiKey = $_ENV['PINEPAY_API_KEY'];
+function getAccessToken() {
+    $clientId = $_ENV['PINEPAY_CLIENT_ID'];
+    $clientSecret = $_ENV['PINEPAY_CLIENT_SECRET'];
+    $credentials = base64_encode($clientId . ':' . $clientSecret);
+    
+    $context = stream_context_create([
+        'http' => [
+            'header' => [
+                'Authorization: Basic ' . $credentials,
+                'Content-Type: application/json'
+            ],
+            'method' => 'POST'
+        ]
+    ]);
+    
+    $response = file_get_contents('https://api.pinepay.com/auth/token', false, $context);
+    $data = json_decode($response, true);
+    return $data['access_token'];
+}
+
+$token = getAccessToken();
 $headers = [
-    'Authorization: Bearer ' . $apiKey,
+    'Authorization: Bearer ' . $token,
     'Content-Type: application/json'
 ];
-
-$context = stream_context_create([
-    'http' => [
-        'header' => $headers,
-        'method' => 'GET'
-    ]
-]);
 ?>
 ```
 
 ```curl cURL
+# Step 1: Get access token
+curl -X POST "https://api.pinepay.com/auth/token" \
+  -H "Authorization: Basic $(echo -n 'clientId:clientSecret' | base64)" \
+  -H "Content-Type: application/json"
+
+# Step 2: Use the token for API calls
 curl -X GET "https://api.pinepay.com/transactions" \
-  -H "Authorization: Bearer your_api_key_here" \
+  -H "Authorization: Bearer your_access_token_here" \
   -H "Content-Type: application/json"
 ```
 </CodeGroup>
 
-## API Key Management
+## Client Credentials Management
 
-### Creating API Keys
+### Creating Client Credentials
 
 1. Log in to your [PinePay Dashboard](https://dashboard.pinepay.com)
 2. Navigate to "Settings" → "API Keys"
-3. Click "Create New API Key"
-4. Give your key a descriptive name
+3. Click "Create New Client"
+4. Give your client a descriptive name
 5. Select the appropriate permissions
-6. Copy and securely store your API key
+6. Copy and securely store your client ID and client secret
 
 <Warning>
-API keys are only shown once when created. Make sure to copy and store them securely.
+Client secrets are only shown once when created. Make sure to copy and store them securely.
 </Warning>
 
 ### Key Permissions
@@ -142,10 +204,11 @@ For security best practices, rotate your API keys regularly:
 
 ### Environment Variables
 
-Store your API keys in environment variables, never in code:
+Store your client credentials in environment variables, never in code:
 
 ```bash .env
-PINEPAY_API_KEY=your_api_key_here
+PINEPAY_CLIENT_ID=your_client_id_here
+PINEPAY_CLIENT_SECRET=your_client_secret_here
 PINEPAY_BASE_URL=https://api.pinepay.com
 ```
 
@@ -233,17 +296,31 @@ API requests are rate limited to prevent abuse:
 
 ## Testing Authentication
 
-You can test your authentication by making a simple request to the health endpoint:
+You can test your authentication by first obtaining an access token and then making a request to the health endpoint:
 
 <RequestExample>
 ```bash cURL
+# Step 1: Get access token
+curl -X POST "https://api.pinepay.com/auth/token" \
+  -H "Authorization: Basic $(echo -n 'clientId:clientSecret' | base64)" \
+  -H "Content-Type: application/json"
+
+# Step 2: Test with health endpoint
 curl -X GET "https://api.pinepay.com/health" \
-  -H "Authorization: Bearer your_api_key_here"
+  -H "Authorization: Bearer your_access_token_here"
 ```
 </RequestExample>
 
 <ResponseExample>
-```json Success
+```json Token Response
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600
+}
+```
+
+```json Health Response
 {
   "status": "ok",
   "timestamp": "2024-01-15T10:30:00Z",
@@ -255,14 +332,21 @@ curl -X GET "https://api.pinepay.com/health" \
 ## Troubleshooting
 
 <AccordionGroup>
-<Accordion title="Invalid API Key">
-  - Verify the API key is correct and not expired
-  - Check for extra spaces or characters
+<Accordion title="Invalid Client Credentials">
+  - Verify the client ID and client secret are correct
+  - Check for extra spaces or characters in credentials
   - Ensure you're using the correct environment (sandbox vs production)
+  - Verify the base64 encoding of credentials is correct
+</Accordion>
+
+<Accordion title="Token Expired">
+  - Access tokens expire after a certain time (usually 1 hour)
+  - Implement token refresh logic in your application
+  - Store token expiration time and refresh before expiry
 </Accordion>
 
 <Accordion title="Permission Denied">
-  - Verify your API key has the required permissions
+  - Verify your client credentials have the required permissions
   - Check if the endpoint requires specific access levels
   - Contact support if you need permission upgrades
 </Accordion>
@@ -270,6 +354,6 @@ curl -X GET "https://api.pinepay.com/health" \
 <Accordion title="Rate Limit Exceeded">
   - Implement exponential backoff in your retry logic
   - Consider upgrading to a higher rate limit plan
-  - Cache responses when possible to reduce API calls
+  - Cache access tokens when possible to reduce auth requests
 </Accordion>
 </AccordionGroup>
