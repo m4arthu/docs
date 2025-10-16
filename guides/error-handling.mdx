@@ -1,15 +1,15 @@
 ---
 title: "Error Handling Guide"
-description: "Comprehensive guide to handling errors and exceptions in PinePay API integration"
+description: "Comprehensive guide to handling errors and exceptions in braix API integration"
 ---
 
 # Error Handling Guide
 
-Proper error handling is crucial for building reliable applications with PinePay API. This guide covers common errors, best practices, and implementation strategies.
+Proper error handling is crucial for building reliable applications with braix API. This guide covers common errors, best practices, and implementation strategies.
 
 ## HTTP Status Codes
 
-PinePay API uses standard HTTP status codes to indicate the success or failure of requests:
+braix API uses standard HTTP status codes to indicate the success or failure of requests:
 
 <AccordionGroup>
 <Accordion title="2xx Success">
@@ -100,8 +100,8 @@ PinePay API uses standard HTTP status codes to indicate the success or failure o
 ```javascript Node.js
 const axios = require('axios');
 
-class PinePayClient {
-  constructor(apiKey, baseUrl = 'https://api.pinepay.com') {
+class braixClient {
+  constructor(apiKey, baseUrl = 'https://api.braix.com') {
     this.apiKey = apiKey;
     this.baseUrl = baseUrl;
   }
@@ -197,36 +197,36 @@ class APIError extends Error {
 import requests
 from requests.exceptions import RequestException, Timeout, ConnectionError
 
-class PinePayError(Exception):
-    """Base exception for PinePay errors"""
+class braixError(Exception):
+    """Base exception for braix errors"""
     pass
 
-class ValidationError(PinePayError):
+class ValidationError(braixError):
     def __init__(self, message, errors=None):
         super().__init__(message)
         self.errors = errors
 
-class AuthenticationError(PinePayError):
+class AuthenticationError(braixError):
     pass
 
-class RateLimitError(PinePayError):
+class RateLimitError(braixError):
     def __init__(self, message, retry_after=None):
         super().__init__(message)
         self.retry_after = retry_after
 
-class ServerError(PinePayError):
+class ServerError(braixError):
     pass
 
-class NetworkError(PinePayError):
+class NetworkError(braixError):
     pass
 
-class APIError(PinePayError):
+class APIError(braixError):
     def __init__(self, message, status_code=None):
         super().__init__(message)
         self.status_code = status_code
 
-class PinePayClient:
-    def __init__(self, api_key, base_url='https://api.pinepay.com'):
+class braixClient:
+    def __init__(self, api_key, base_url='https://api.braix.com'):
         self.api_key = api_key
         self.base_url = base_url
         self.headers = {
@@ -272,7 +272,7 @@ class PinePayClient:
 
 ```php PHP
 <?php
-class PinePayError extends Exception {
+class braixError extends Exception {
     protected $errors;
     
     public function __construct($message, $errors = null) {
@@ -285,9 +285,9 @@ class PinePayError extends Exception {
     }
 }
 
-class ValidationError extends PinePayError {}
-class AuthenticationError extends PinePayError {}
-class RateLimitError extends PinePayError {
+class ValidationError extends braixError {}
+class AuthenticationError extends braixError {}
+class RateLimitError extends braixError {
     protected $retryAfter;
     
     public function __construct($message, $retryAfter = null) {
@@ -299,14 +299,14 @@ class RateLimitError extends PinePayError {
         return $this->retryAfter;
     }
 }
-class ServerError extends PinePayError {}
-class NetworkError extends PinePayError {}
+class ServerError extends braixError {}
+class NetworkError extends braixError {}
 
-class PinePayClient {
+class braixClient {
     private $apiKey;
     private $baseUrl;
     
-    public function __construct($apiKey, $baseUrl = 'https://api.pinepay.com') {
+    public function __construct($apiKey, $baseUrl = 'https://api.braix.com') {
         $this->apiKey = $apiKey;
         $this->baseUrl = $baseUrl;
     }
@@ -373,7 +373,7 @@ class PinePayClient {
 
 <CodeGroup>
 ```javascript Node.js
-class PinePayClient {
+class braixClient {
   async createPixPaymentWithRetry(paymentData, maxRetries = 3) {
     let lastError;
     
@@ -412,7 +412,7 @@ class PinePayClient {
 import time
 import random
 
-class PinePayClient:
+class braixClient:
     def create_pix_payment_with_retry(self, payment_data, max_retries=3):
         last_error = None
         
@@ -440,7 +440,7 @@ class PinePayClient:
 
 ```php PHP
 <?php
-class PinePayClient {
+class braixClient {
     public function createPixPaymentWithRetry($paymentData, $maxRetries = 3) {
         $lastError = null;
         
@@ -500,7 +500,7 @@ const logger = winston.createLogger({
   ]
 });
 
-class PinePayClient {
+class braixClient {
   async createPixPayment(paymentData) {
     try {
       const response = await axios.post(`${this.baseUrl}/requestPayment`, paymentData, {
@@ -551,7 +551,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-class PinePayClient:
+class braixClient:
     def create_pix_payment(self, payment_data):
         try:
             response = requests.post(
@@ -598,17 +598,17 @@ class PinePayClient:
 ```php PHP
 <?php
 // Configure logging
-$logger = new Monolog\Logger('pinepay');
+$logger = new Monolog\Logger('braix');
 $logger->pushHandler(new Monolog\Handler\StreamHandler('error.log', Monolog\Logger::ERROR));
 $logger->pushHandler(new Monolog\Handler\StreamHandler('combined.log', Monolog\Logger::INFO));
 
-class PinePayClient {
+class braixClient {
     private $logger;
     
-    public function __construct($apiKey, $baseUrl = 'https://api.pinepay.com') {
+    public function __construct($apiKey, $baseUrl = 'https://api.braix.com') {
         $this->apiKey = $apiKey;
         $this->baseUrl = $baseUrl;
-        $this->logger = new Monolog\Logger('pinepay');
+        $this->logger = new Monolog\Logger('braix');
     }
     
     public function createPixPayment($paymentData) {

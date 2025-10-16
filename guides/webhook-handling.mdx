@@ -1,21 +1,21 @@
 ---
 title: "Webhook Handling Guide"
-description: "Complete guide to handling PinePay webhooks securely and reliably"
+description: "Complete guide to handling braix webhooks securely and reliably"
 ---
 
 # Webhook Handling Guide
 
-Webhooks are essential for real-time payment processing. This guide covers everything you need to know about handling PinePay webhooks securely and reliably.
+Webhooks are essential for real-time payment processing. This guide covers everything you need to know about handling braix webhooks securely and reliably.
 
 ## What are Webhooks?
 
-Webhooks are HTTP callbacks that PinePay sends to your application when specific events occur, such as payment completions, failures, or refunds. They allow you to receive real-time notifications without polling the API.
+Webhooks are HTTP callbacks that braix sends to your application when specific events occur, such as payment completions, failures, or refunds. They allow you to receive real-time notifications without polling the API.
 
 ## Webhook Security
 
 ### Signature Verification
 
-All PinePay webhooks include a signature for verification. Always verify the signature to ensure the webhook is authentic:
+All braix webhooks include a signature for verification. Always verify the signature to ensure the webhook is authentic:
 
 <CodeGroup>
 ```javascript Node.js
@@ -34,8 +34,8 @@ const verifyWebhookSignature = (payload, signature, secret) => {
 };
 
 // In your webhook handler
-app.post('/webhooks/pinepay', (req, res) => {
-  const signature = req.headers['x-pinepay-signature'];
+app.post('/webhooks/braix', (req, res) => {
+  const signature = req.headers['x-braix-signature'];
   const payload = JSON.stringify(req.body);
   
   if (!verifyWebhookSignature(payload, signature, process.env.WEBHOOK_SECRET)) {
@@ -61,9 +61,9 @@ def verify_webhook_signature(payload, signature, secret):
     return hmac.compare_digest(signature.replace('sha256=', ''), expected_signature)
 
 # In your webhook handler
-@app.route('/webhooks/pinepay', methods=['POST'])
+@app.route('/webhooks/braix', methods=['POST'])
 def handle_webhook():
-    signature = request.headers.get('X-PinePay-Signature')
+    signature = request.headers.get('X-braix-Signature')
     payload = request.get_data(as_text=True)
     
     if not verify_webhook_signature(payload, signature, os.getenv('WEBHOOK_SECRET')):
@@ -81,7 +81,7 @@ function verifyWebhookSignature($payload, $signature, $secret) {
 }
 
 // In your webhook handler
-$signature = $_SERVER['HTTP_X_PINEPAY_SIGNATURE'] ?? '';
+$signature = $_SERVER['HTTP_X_braix_SIGNATURE'] ?? '';
 $payload = file_get_contents('php://input');
 
 if (!verifyWebhookSignature($payload, $signature, $_ENV['WEBHOOK_SECRET'])) {
@@ -318,7 +318,7 @@ const app = express();
 
 app.use(express.json());
 
-app.post('/webhooks/pinepay', (req, res) => {
+app.post('/webhooks/braix', (req, res) => {
   const { type, data } = req.body;
   
   try {
@@ -381,7 +381,7 @@ import json
 
 app = Flask(__name__)
 
-@app.route('/webhooks/pinepay', methods=['POST'])
+@app.route('/webhooks/braix', methods=['POST'])
 def handle_webhook():
     data = request.get_json()
     webhook_type = data.get('type')
@@ -497,8 +497,8 @@ const processedWebhooks = new Set();
 
 app.use(express.json());
 
-app.post('/webhooks/pinepay', async (req, res) => {
-  const deliveryId = req.headers['x-pinepay-delivery'];
+app.post('/webhooks/braix', async (req, res) => {
+  const deliveryId = req.headers['x-braix-delivery'];
   const { type, data } = req.body;
   
   // Check for duplicate webhooks
@@ -534,9 +534,9 @@ import json
 app = Flask(__name__)
 redis_client = redis.Redis(host='localhost', port=6379, db=0)
 
-@app.route('/webhooks/pinepay', methods=['POST'])
+@app.route('/webhooks/braix', methods=['POST'])
 def handle_webhook():
-    delivery_id = request.headers.get('X-PinePay-Delivery')
+    delivery_id = request.headers.get('X-braix-Delivery')
     data = request.get_json()
     webhook_type = data.get('type')
     
@@ -564,7 +564,7 @@ def process_webhook(webhook_type, data):
 ```php PHP
 <?php
 // webhook.php
-$deliveryId = $_SERVER['HTTP_X_PINEPAY_DELIVERY'] ?? '';
+$deliveryId = $_SERVER['HTTP_X_braix_DELIVERY'] ?? '';
 $input = file_get_contents('php://input');
 $data = json_decode($input, true);
 
@@ -619,7 +619,7 @@ function processWebhook($type, $data) {
 </Step>
 
 <Step title="Configure Webhook URL">
-  Use the ngrok URL as your webhook URL in PinePay Dashboard
+  Use the ngrok URL as your webhook URL in braix Dashboard
 </Step>
 
 <Step title="Test Webhooks">
@@ -649,7 +649,7 @@ function processWebhook($type, $data) {
 
 ## Webhook Retry Policy
 
-PinePay implements the following retry policy for webhooks:
+braix implements the following retry policy for webhooks:
 
 - **Initial attempt**: Immediate
 - **Retry 1**: 1 minute after failure

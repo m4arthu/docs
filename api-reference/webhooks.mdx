@@ -9,7 +9,7 @@ Webhooks allow you to receive real-time notifications about PIX payments, refund
 
 ## Webhook Events
 
-PinePay sends webhooks for the following events:
+braix sends webhooks for the following events:
 
 <AccordionGroup>
 <Accordion title="Payment Events">
@@ -202,7 +202,7 @@ Sent when a PIX infraction is reported.
 
 ### Signature Verification
 
-All webhooks include a signature for verification. Verify the signature to ensure the webhook is from PinePay:
+All webhooks include a signature for verification. Verify the signature to ensure the webhook is from braix:
 
 <CodeGroup>
 ```javascript Node.js
@@ -221,8 +221,8 @@ const verifyWebhookSignature = (payload, signature, secret) => {
 };
 
 // In your webhook handler
-app.post('/webhooks/pinepay', (req, res) => {
-  const signature = req.headers['x-pinepay-signature'];
+app.post('/webhooks/braix', (req, res) => {
+  const signature = req.headers['x-braix-signature'];
   const payload = JSON.stringify(req.body);
   
   if (!verifyWebhookSignature(payload, signature, process.env.WEBHOOK_SECRET)) {
@@ -248,9 +248,9 @@ def verify_webhook_signature(payload, signature, secret):
     return hmac.compare_digest(signature.replace('sha256=', ''), expected_signature)
 
 # In your webhook handler
-@app.route('/webhooks/pinepay', methods=['POST'])
+@app.route('/webhooks/braix', methods=['POST'])
 def handle_webhook():
-    signature = request.headers.get('X-PinePay-Signature')
+    signature = request.headers.get('X-braix-Signature')
     payload = request.get_data(as_text=True)
     
     if not verify_webhook_signature(payload, signature, os.getenv('WEBHOOK_SECRET')):
@@ -268,7 +268,7 @@ function verifyWebhookSignature($payload, $signature, $secret) {
 }
 
 // In your webhook handler
-$signature = $_SERVER['HTTP_X_PINEPAY_SIGNATURE'] ?? '';
+$signature = $_SERVER['HTTP_X_braix_SIGNATURE'] ?? '';
 $payload = file_get_contents('php://input');
 
 if (!verifyWebhookSignature($payload, $signature, $_ENV['WEBHOOK_SECRET'])) {
@@ -287,34 +287,34 @@ echo json_encode(['received' => true]);
 
 ### Setting Up Webhooks
 
-1. **Configure Webhook URL**: Set your webhook URL in the PinePay Dashboard
+1. **Configure Webhook URL**: Set your webhook URL in the braix Dashboard
 2. **Verify Endpoint**: Ensure your endpoint returns 200 status for successful webhooks
 3. **Handle Retries**: Implement idempotency to handle duplicate webhooks
 4. **Monitor Delivery**: Check webhook delivery status in the dashboard
 
 ### Webhook Headers
 
-PinePay sends the following headers with webhooks:
+braix sends the following headers with webhooks:
 
 <ParamField header="Content-Type" type="string">
   Always `application/json`
 </ParamField>
 
-<ParamField header="X-PinePay-Signature" type="string">
+<ParamField header="X-braix-Signature" type="string">
   HMAC-SHA256 signature for verification
 </ParamField>
 
-<ParamField header="X-PinePay-Event" type="string">
+<ParamField header="X-braix-Event" type="string">
   The event type (e.g., `PAYMENT_RECEIVED`)
 </ParamField>
 
-<ParamField header="X-PinePay-Delivery" type="string">
+<ParamField header="X-braix-Delivery" type="string">
   Unique delivery ID for tracking
 </ParamField>
 
 ## Webhook Retry Policy
 
-PinePay implements the following retry policy for webhooks:
+braix implements the following retry policy for webhooks:
 
 - **Initial attempt**: Immediate
 - **Retry 1**: 1 minute after failure
@@ -345,7 +345,7 @@ Webhooks that fail after all retries are marked as failed and won't be retried a
 </Step>
 
 <Step title="Configure Webhook URL">
-  Use the ngrok URL as your webhook URL in PinePay Dashboard
+  Use the ngrok URL as your webhook URL in braix Dashboard
 </Step>
 </Steps>
 

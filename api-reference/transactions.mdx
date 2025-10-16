@@ -13,7 +13,7 @@ Retrieve the current balance for the authenticated user.
 
 <RequestExample>
 ```bash cURL
-curl -X GET "https://api.pinepay.com/api/balance" \
+curl -X GET "https://api.braix.com/api/balance" \
   -H "Authorization: Bearer your_api_key_here"
 ```
 </RequestExample>
@@ -39,7 +39,7 @@ Check the current status of a specific transaction.
 
 <RequestExample>
 ```bash cURL
-curl -X POST "https://api.pinepay.com/checkTransactionStatus" \
+curl -X POST "https://api.braix.com/checkTransactionStatus" \
   -H "Authorization: Bearer your_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{
@@ -88,7 +88,7 @@ Check the status of a medical transaction or health check.
 
 <RequestExample>
 ```bash cURL
-curl -X POST "https://api.pinepay.com/checkMedStatus" \
+curl -X POST "https://api.braix.com/checkMedStatus" \
   -H "Authorization: Bearer your_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{
@@ -129,7 +129,7 @@ Retrieve a paginated list of transactions for the authenticated user.
 
 <RequestExample>
 ```bash cURL
-curl -X GET "https://api.pinepay.com/api/transactions?page=1&limit=20&status=completed&gateway=woovi" \
+curl -X GET "https://api.braix.com/api/transactions?page=1&limit=20&status=completed&gateway=woovi" \
   -H "Authorization: Bearer your_api_key_here"
 ```
 </RequestExample>
@@ -196,7 +196,7 @@ Get detailed information about a specific transaction.
 
 <RequestExample>
 ```bash cURL
-curl -X GET "https://api.pinepay.com/api/transactions/tx_123456789" \
+curl -X GET "https://api.braix.com/api/transactions/tx_123456789" \
   -H "Authorization: Bearer your_api_key_here"
 ```
 </RequestExample>
@@ -251,7 +251,7 @@ Cancel a pending transaction.
 
 <RequestExample>
 ```bash cURL
-curl -X POST "https://api.pinepay.com/api/transactions/tx_123456789/cancel" \
+curl -X POST "https://api.braix.com/api/transactions/tx_123456789/cancel" \
   -H "Authorization: Bearer your_api_key_here"
 ```
 </RequestExample>
@@ -282,7 +282,7 @@ Retrieve transaction statistics for the authenticated user.
 
 <RequestExample>
 ```bash cURL
-curl -X GET "https://api.pinepay.com/api/transactions/statistics?startDate=2024-01-01&endDate=2024-01-31" \
+curl -X GET "https://api.braix.com/api/transactions/statistics?startDate=2024-01-01&endDate=2024-01-31" \
   -H "Authorization: Bearer your_api_key_here"
 ```
 </RequestExample>
@@ -337,7 +337,7 @@ Export transaction data in various formats.
 
 <RequestExample>
 ```bash cURL
-curl -X POST "https://api.pinepay.com/api/transactions/export" \
+curl -X POST "https://api.braix.com/api/transactions/export" \
   -H "Authorization: Bearer your_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{
@@ -357,7 +357,7 @@ curl -X POST "https://api.pinepay.com/api/transactions/export" \
   "message": "Transaction data exported successfully",
   "data": {
     "exportId": "exp_123456789",
-    "downloadUrl": "https://api.pinepay.com/exports/exp_123456789/download",
+    "downloadUrl": "https://api.braix.com/exports/exp_123456789/download",
     "format": "csv",
     "recordCount": 150,
     "expiresAt": "2024-01-22T10:30:00Z"

@@ -1,21 +1,21 @@
 ---
 title: "PIX Integration Guide"
-description: "Complete guide to integrating PIX payments with PinePay API"
+description: "Complete guide to integrating PIX payments with braix API"
 ---
 
 # PIX Integration Guide
 
-This comprehensive guide will walk you through integrating PIX payments with PinePay API, from basic setup to advanced features like webhooks and refunds.
+This comprehensive guide will walk you through integrating PIX payments with braix API, from basic setup to advanced features like webhooks and refunds.
 
 ## Overview
 
-PIX (Sistema de Pagamentos Instantâneos) is Brazil's instant payment system that allows real-time transfers 24/7. PinePay provides a unified API to integrate with multiple PIX gateways, simplifying the complexity of different provider implementations.
+PIX (Sistema de Pagamentos Instantâneos) is Brazil's instant payment system that allows real-time transfers 24/7. braix provides a unified API to integrate with multiple PIX gateways, simplifying the complexity of different provider implementations.
 
 ## Prerequisites
 
 Before starting your integration, ensure you have:
 
-- A PinePay account with API credentials
+- A braix account with API credentials
 - A webhook endpoint URL for receiving notifications
 - Basic understanding of REST APIs and webhooks
 - Development environment with your preferred programming language
@@ -28,8 +28,8 @@ Let's start with a simple PIX payment integration:
 ```javascript Node.js
 const axios = require('axios');
 
-class PinePayClient {
-  constructor(apiKey, baseUrl = 'https://api.pinepay.com') {
+class braixClient {
+  constructor(apiKey, baseUrl = 'https://api.braix.com') {
     this.apiKey = apiKey;
     this.baseUrl = baseUrl;
   }
@@ -58,12 +58,12 @@ class PinePayClient {
 }
 
 // Usage
-const client = new PinePayClient(process.env.PINEPAY_API_KEY);
+const client = new braixClient(process.env.braix_API_KEY);
 
 const payment = await client.createPixPayment({
   amount: 10.50,
   pixKey: 'user@example.com',
-  webhookUrl: 'https://your-domain.com/webhooks/pinepay',
+  webhookUrl: 'https://your-domain.com/webhooks/braix',
   externalId: 'order_123',
   gateway: 'woovi',
   description: 'Payment for order #123'
@@ -76,8 +76,8 @@ console.log('Payment created:', payment);
 import requests
 import os
 
-class PinePayClient:
-    def __init__(self, api_key, base_url='https://api.pinepay.com'):
+class braixClient:
+    def __init__(self, api_key, base_url='https://api.braix.com'):
         self.api_key = api_key
         self.base_url = base_url
         self.headers = {
@@ -98,12 +98,12 @@ class PinePayClient:
             raise Exception(f'PIX payment failed: {e}')
 
 # Usage
-client = PinePayClient(os.getenv('PINEPAY_API_KEY'))
+client = braixClient(os.getenv('braix_API_KEY'))
 
 payment = client.create_pix_payment({
     'amount': 10.50,
     'pixKey': 'user@example.com',
-    'webhookUrl': 'https://your-domain.com/webhooks/pinepay',
+    'webhookUrl': 'https://your-domain.com/webhooks/braix',
     'externalId': 'order_123',
     'gateway': 'woovi',
     'description': 'Payment for order #123'
@@ -114,11 +114,11 @@ print('Payment created:', payment)
 
 ```php PHP
 <?php
-class PinePayClient {
+class braixClient {
     private $apiKey;
     private $baseUrl;
     
-    public function __construct($apiKey, $baseUrl = 'https://api.pinepay.com') {
+    public function __construct($apiKey, $baseUrl = 'https://api.braix.com') {
         $this->apiKey = $apiKey;
         $this->baseUrl = $baseUrl;
     }
@@ -149,12 +149,12 @@ class PinePayClient {
 }
 
 // Usage
-$client = new PinePayClient($_ENV['PINEPAY_API_KEY']);
+$client = new braixClient($_ENV['braix_API_KEY']);
 
 $payment = $client->createPixPayment([
     'amount' => 10.50,
     'pixKey' => 'user@example.com',
-    'webhookUrl' => 'https://your-domain.com/webhooks/pinepay',
+    'webhookUrl' => 'https://your-domain.com/webhooks/braix',
     'externalId' => 'order_123',
     'gateway' => 'woovi',
     'description' => 'Payment for order #123'
@@ -194,7 +194,7 @@ async generatePixQrCode(qrData) {
 // Usage
 const qrCode = await client.generatePixQrCode({
   amount: 25.00,
-  webhookUrl: 'https://your-domain.com/webhooks/pinepay',
+  webhookUrl: 'https://your-domain.com/webhooks/braix',
   externalId: 'qr_123',
   description: 'QR Code payment'
 });
@@ -219,7 +219,7 @@ def generate_pix_qr_code(self, qr_data):
 # Usage
 qr_code = client.generate_pix_qr_code({
     'amount': 25.00,
-    'webhookUrl': 'https://your-domain.com/webhooks/pinepay',
+    'webhookUrl': 'https://your-domain.com/webhooks/braix',
     'externalId': 'qr_123',
     'description': 'QR Code payment'
 })
@@ -256,7 +256,7 @@ public function generatePixQrCode($qrData) {
 // Usage
 $qrCode = $client->generatePixQrCode([
     'amount' => 25.00,
-    'webhookUrl' => 'https://your-domain.com/webhooks/pinepay',
+    'webhookUrl' => 'https://your-domain.com/webhooks/braix',
     'externalId' => 'qr_123',
     'description' => 'QR Code payment'
 ]);
@@ -291,8 +291,8 @@ const verifyWebhookSignature = (payload, signature, secret) => {
   );
 };
 
-app.post('/webhooks/pinepay', (req, res) => {
-  const signature = req.headers['x-pinepay-signature'];
+app.post('/webhooks/braix', (req, res) => {
+  const signature = req.headers['x-braix-signature'];
   const payload = JSON.stringify(req.body);
   
   // Verify signature
@@ -342,9 +342,9 @@ def verify_webhook_signature(payload, signature, secret):
     
     return hmac.compare_digest(signature.replace('sha256=', ''), expected_signature)
 
-@app.route('/webhooks/pinepay', methods=['POST'])
+@app.route('/webhooks/braix', methods=['POST'])
 def handle_webhook():
-    signature = request.headers.get('X-PinePay-Signature')
+    signature = request.headers.get('X-braix-Signature')
     payload = request.get_data(as_text=True)
     
     # Verify signature
@@ -380,7 +380,7 @@ function verifyWebhookSignature($payload, $signature, $secret) {
 }
 
 // Handle webhook
-$signature = $_SERVER['HTTP_X_PINEPAY_SIGNATURE'] ?? '';
+$signature = $_SERVER['HTTP_X_braix_SIGNATURE'] ?? '';
 $payload = file_get_contents('php://input');
 
 // Verify signature
@@ -585,7 +585,7 @@ Handle multi-party payments with PIX splits:
 const splitPayment = await client.createPixPayment({
   amount: 100.00,
   pixKey: 'merchant@example.com',
-  webhookUrl: 'https://your-domain.com/webhooks/pinepay',
+  webhookUrl: 'https://your-domain.com/webhooks/braix',
   externalId: 'split_123',
   gateway: 'woovi',
   description: 'Split payment',

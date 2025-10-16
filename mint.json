@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/schema.json",
-  "name": "PinePay API",
+  "name": "braix API",
   "logo": {
     "dark": "https://api.braix.com.br/assets/icon.png",
     "light": "https://api.braix.com.br/assets/icon.png"
@@ -18,12 +18,12 @@
   "topbarLinks": [
     {
       "name": "Support",
-      "url": "mailto:support@pinepay.com"
+      "url": "mailto:support@braix.com"
     }
   ],
   "topbarCtaButton": {
     "name": "Dashboard",
-    "url": "https://dashboard.pinepay.com"
+    "url": "https://dashboard.braix.com.br"
   },
   "tabs": [
     {
@@ -63,8 +63,8 @@
     }
   ],
   "footerSocials": {
-    "twitter": "https://twitter.com/pinepay",
-    "github": "https://github.com/pinepay",
-    "linkedin": "https://linkedin.com/company/pinepay"
+    "twitter": "https://twitter.com/braix",
+    "github": "https://github.com/braix",
+    "linkedin": "https://linkedin.com/company/braix"
   }
 }

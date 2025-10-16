@@ -1,17 +1,17 @@
 ---
 title: "Quick Start Guide"
-description: "Get up and running with PinePay API in under 10 minutes"
+description: "Get up and running with braix API in under 10 minutes"
 ---
 
 # Quick Start Guide
 
-This guide will walk you through setting up PinePay API integration in just a few steps. You'll be processing PIX payments in no time!
+This guide will walk you through setting up braix API integration in just a few steps. You'll be processing PIX payments in no time!
 
 ## Prerequisites
 
 Before you begin, make sure you have:
 
-- A PinePay account ([Sign up here](https://dashboard.pinepay.com))
+- A braix account ([Sign up here](https://dashboard.braix.com.br))
 - Your API credentials from the dashboard
 - Node.js 16+ or your preferred programming language
 - A webhook endpoint URL for receiving notifications
@@ -38,12 +38,12 @@ composer require guzzlehttp/guzzle
 
 ## Step 2: Configure Your Environment
 
-Create a `.env` file with your PinePay credentials:
+Create a `.env` file with your braix credentials:
 
 ```bash .env
-PINEPAY_API_KEY=your_api_key_here
-PINEPAY_BASE_URL=https://api.pinepay.com
-PINEPAY_WEBHOOK_URL=https://your-domain.com/webhooks/pinepay
+braix_API_KEY=your_api_key_here
+braix_BASE_URL=https://api.braix.com
+braix_WEBHOOK_URL=https://your-domain.com/webhooks/braix
 ```
 
 <Warning>
@@ -60,16 +60,16 @@ const axios = require('axios');
 
 const createPixPayment = async () => {
   try {
-    const response = await axios.post('https://api.pinepay.com/requestPayment', {
+    const response = await axios.post('https://api.braix.com/requestPayment', {
       amount: 10.50,
       pixKey: 'user@example.com',
-      webhookUrl: 'https://your-domain.com/webhooks/pinepay',
+      webhookUrl: 'https://your-domain.com/webhooks/braix',
       externalId: 'order_123',
       gateway: 'woovi',
       description: 'Payment for order #123'
     }, {
       headers: {
-        'Authorization': `Bearer ${process.env.PINEPAY_API_KEY}`,
+        'Authorization': `Bearer ${process.env.braix_API_KEY}`,
         'Content-Type': 'application/json'
       }
     });
@@ -89,15 +89,15 @@ import requests
 import os
 
 def create_pix_payment():
-    url = 'https://api.pinepay.com/requestPayment'
+    url = 'https://api.braix.com/requestPayment'
     headers = {
-        'Authorization': f'Bearer {os.getenv("PINEPAY_API_KEY")}',
+        'Authorization': f'Bearer {os.getenv("braix_API_KEY")}',
         'Content-Type': 'application/json'
     }
     data = {
         'amount': 10.50,
         'pixKey': 'user@example.com',
-        'webhookUrl': 'https://your-domain.com/webhooks/pinepay',
+        'webhookUrl': 'https://your-domain.com/webhooks/braix',
         'externalId': 'order_123',
         'gateway': 'woovi',
         'description': 'Payment for order #123'
@@ -117,13 +117,13 @@ create_pix_payment()
 
 ```php PHP
 <?php
-$apiKey = $_ENV['PINEPAY_API_KEY'];
-$url = 'https://api.pinepay.com/requestPayment';
+$apiKey = $_ENV['braix_API_KEY'];
+$url = 'https://api.braix.com/requestPayment';
 
 $data = [
     'amount' => 10.50,
     'pixKey' => 'user@example.com',
-    'webhookUrl' => 'https://your-domain.com/webhooks/pinepay',
+    'webhookUrl' => 'https://your-domain.com/webhooks/braix',
     'externalId' => 'order_123',
     'gateway' => 'woovi',
     'description' => 'Payment for order #123'
@@ -163,7 +163,7 @@ const app = express();
 
 app.use(express.json());
 
-app.post('/webhooks/pinepay', (req, res) => {
+app.post('/webhooks/braix', (req, res) => {
   const { type, data } = req.body;
   
   if (type === 'PAYMENT_RECEIVED') {
@@ -184,7 +184,7 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-@app.route('/webhooks/pinepay', methods=['POST'])
+@app.route('/webhooks/braix', methods=['POST'])
 def handle_webhook():
     data = request.get_json()
     webhook_type = data.get('type')
