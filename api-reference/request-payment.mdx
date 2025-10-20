@@ -19,7 +19,6 @@ curl -X POST "https://api.braix.com.br/requestPayment" \
     "pixKey": "user@example.com",
     "webhookUrl": "https://your-domain.com/webhooks/braix",
     "externalId": "order_123",
-    "gateway": "woovi",
     "description": "Payment for order #123",
     "withdrawalType": "qrCode"
   }'
@@ -30,13 +29,12 @@ curl -X POST "https://api.braix.com.br/requestPayment" \
 ```javascript JavaScript
 const axios = require('axios');
 
-const sendPayment = async (amount, pixKey, webhookUrl, externalId, gateway, description, withdrawalType) => {
+const sendPayment = async (amount, pixKey, webhookUrl, externalId, description, withdrawalType) => {
   const response = await axios.post('https://api.braix.com.br/requestPayment', {
     amount: amount,
     pixKey: pixKey,
     webhookUrl: webhookUrl,
     externalId: externalId,
-    gateway: gateway,
     description: description,
     withdrawalType: withdrawalType
   }, {
@@ -53,7 +51,7 @@ const sendPayment = async (amount, pixKey, webhookUrl, externalId, gateway, desc
 ```python Python
 import requests
 
-def send_payment(amount, pix_key, webhook_url, external_id, gateway, description, withdrawal_type):
+def send_payment(amount, pix_key, webhook_url, external_id, description, withdrawal_type):
     headers = {
         'Authorization': f'Bearer {os.getenv("BRAIX_ACCESS_TOKEN")}',
         'Content-Type': 'application/json'
@@ -64,7 +62,6 @@ def send_payment(amount, pix_key, webhook_url, external_id, gateway, description
         'pixKey': pix_key,
         'webhookUrl': webhook_url,
         'externalId': external_id,
-        'gateway': gateway,
         'description': description,
         'withdrawalType': withdrawal_type
     }
@@ -76,14 +73,13 @@ def send_payment(amount, pix_key, webhook_url, external_id, gateway, description
 
 ```php PHP
 <?php
-function sendPayment($amount, $pixKey, $webhookUrl, $externalId, $gateway, $description, $withdrawalType) {
+function sendPayment($amount, $pixKey, $webhookUrl, $externalId, $description, $withdrawalType) {
     $token = $_ENV['BRAIX_ACCESS_TOKEN'];
     $data = [
         'amount' => $amount,
         'pixKey' => $pixKey,
         'webhookUrl' => $webhookUrl,
         'externalId' => $externalId,
-        'gateway' => $gateway,
         'description' => $description,
         'withdrawalType' => $withdrawalType
     ];
@@ -124,9 +120,6 @@ function sendPayment($amount, $pixKey, $webhookUrl, $externalId, $gateway, $desc
   External identifier for the transaction.
 </ParamField>
 
-<ParamField query="gateway" type="string" required>
-  The payment gateway to use. Options: woovi, treeal, playshark, voluti, efi, xgate, xgate2, bancoe2, primepag, wepayments.
-</ParamField>
 
 <ParamField query="description" type="string">
   Description of the payment.
@@ -147,7 +140,6 @@ function sendPayment($amount, $pixKey, $webhookUrl, $externalId, $gateway, $desc
   "pixKey": "user@example.com",
   "endToEndId": "E12345678202407080309abc123",
   "status": "processing",
-  "gateway": "woovi",
   "createdAt": "2024-01-15T10:30:00Z"
 }
 ```

@@ -13,190 +13,220 @@ braix sends webhooks for the following events:
 
 <AccordionGroup>
 <Accordion title="Payment Events">
-  - **PAYMENT_RECEIVED** - A PIX payment was received
-  - **PAYMENT_COMPLETED** - A PIX payment was completed
-  - **PAYMENT_FAILED** - A PIX payment failed
-  - **PAYMENT_CANCELLED** - A PIX payment was cancelled
+  - **RECEIVE** - PIX deposit confirmed and liquidated
+  - **TRANSFER** - PIX withdrawal confirmed and liquidated
+  - **CASHOUT** - PIX withdrawal rejected or cancelled
 </Accordion>
 
 <Accordion title="Refund Events">
-  - **REFUND_PROCESSING** - A refund is being processed
-  - **REFUND_COMPLETED** - A refund was completed
-  - **REFUND_FAILED** - A refund failed
-</Accordion>
-
-<Accordion title="QR Code Events">
-  - **QR_CODE_CREATED** - A PIX QR code was generated
-  - **QR_CODE_EXPIRED** - A PIX QR code expired
-  - **QR_CODE_PAID** - A PIX QR code was paid
+  - **REFUND** - Transaction refunded (deposit or withdrawal)
 </Accordion>
 
 <Accordion title="Infraction Events">
-  - **INFRACTION_REPORTED** - A PIX infraction was reported
-  - **INFRACTION_ACKNOWLEDGED** - An infraction was acknowledged
-  - **INFRACTION_CLOSED** - An infraction was closed
+  - **INFRACTION** - PIX infraction reported or closed
 </Accordion>
 </AccordionGroup>
 
 ## Webhook Payload Structure
 
-All webhooks follow a consistent payload structure:
+All webhooks follow a consistent payload structure with a `type` field indicating the event type and a `data` object containing the event-specific information.
 
-```json
-{
-  "type": "PAYMENT_RECEIVED",
-  "data": {
-    "transactionId": "tx_123456789",
-    "endToEndId": "E12345678202401151234567890",
-    "amount": 10.50,
-    "pixKey": "user@example.com",
-    "status": "completed",
-    "gateway": "woovi",
-    "externalId": "order_123",
-    "timestamp": "2024-01-15T10:30:00Z"
-  },
-  "timestamp": "2024-01-15T10:30:00Z",
-  "signature": "sha256=abc123..."
-}
-```
+## RECEIVE - PIX Deposit Confirmed
 
-## Payment Received Webhook
-
-Sent when a PIX payment is received and processed.
+Sent when a PIX deposit is confirmed and liquidated.
 
 <ResponseExample>
-```json PAYMENT_RECEIVED
+```json RECEIVE
 {
-  "type": "PAYMENT_RECEIVED",
+  "type": "RECEIVE",
   "data": {
-    "transactionId": "tx_123456789",
-    "endToEndId": "E12345678202401151234567890",
-    "amount": 10.50,
-    "pixKey": "user@example.com",
-    "status": "completed",
-    "gateway": "woovi",
-    "externalId": "order_123",
-    "description": "Payment for order #123",
-    "payer": {
-      "name": "João Silva",
-      "document": "12345678901"
+    "id": "txtId_ou_id_da_transacao",
+    "status": "LIQUIDATED",
+    "payment": {
+      "amount": "100.00",
+      "currency": "BRL"
     },
-    "timestamp": "2024-01-15T10:30:00Z"
-  },
-  "timestamp": "2024-01-15T10:30:00Z",
-  "signature": "sha256=abc123..."
-}
-```
-</ResponseExample>
-
-## Payment Failed Webhook
-
-Sent when a PIX payment fails.
-
-<ResponseExample>
-```json PAYMENT_FAILED
-{
-  "type": "PAYMENT_FAILED",
-  "data": {
-    "transactionId": "tx_123456789",
-    "endToEndId": "E12345678202401151234567890",
-    "amount": 10.50,
-    "pixKey": "user@example.com",
-    "status": "failed",
-    "gateway": "woovi",
-    "externalId": "order_123",
-    "error": {
-      "code": "INSUFFICIENT_FUNDS",
-      "message": "Insufficient funds in account"
+    "createdAt": "2025-01-19T10:30:00.000Z",
+    "webhookType": "RECEIVE",
+    "location": "pix",
+    "endToEndId": "E12345678202501191030ABC123",
+    "txId": "txtId_da_transacao",
+    "externalId": "external_id_do_cliente",
+    "creditorAccount": {
+      "name": "useativo",
+      "document": null,
+      "accountType": "CACC"
     },
-    "timestamp": "2024-01-15T10:30:00Z"
-  },
-  "timestamp": "2024-01-15T10:30:00Z",
-  "signature": "sha256=abc123..."
-}
-```
-</ResponseExample>
-
-## Refund Completed Webhook
-
-Sent when a PIX refund is completed.
-
-<ResponseExample>
-```json REFUND_COMPLETED
-{
-  "type": "REFUND_COMPLETED",
-  "data": {
-    "refundId": "ref_123456789",
-    "endToEndId": "E12345678202401151234567890",
-    "originalTransactionId": "tx_123456789",
-    "amount": 10.50,
-    "status": "completed",
-    "gateway": "woovi",
-    "externalId": "order_123",
-    "timestamp": "2024-01-15T10:30:00Z"
-  },
-  "timestamp": "2024-01-15T10:30:00Z",
-  "signature": "sha256=abc123..."
-}
-```
-</ResponseExample>
-
-## QR Code Paid Webhook
-
-Sent when a PIX QR code is paid.
-
-<ResponseExample>
-```json QR_CODE_PAID
-{
-  "type": "QR_CODE_PAID",
-  "data": {
-    "qrCodeId": "qr_123456789",
-    "transactionId": "tx_123456789",
-    "endToEndId": "E12345678202401151234567890",
-    "amount": 25.00,
-    "status": "paid",
-    "gateway": "woovi",
-    "externalId": "qr_123",
-    "payer": {
-      "name": "Maria Santos",
-      "document": "98765432100"
+    "debtorAccount": {
+      "name": "Nome do Pagador",
+      "document": "12345678900",
+      "accountType": "CACC"
     },
-    "timestamp": "2024-01-15T10:30:00Z"
-  },
-  "timestamp": "2024-01-15T10:30:00Z",
-  "signature": "sha256=abc123..."
+    "checksum": "hash_checksum"
+  }
 }
 ```
 </ResponseExample>
 
-## Infraction Reported Webhook
+## TRANSFER - PIX Withdrawal Confirmed
 
-Sent when a PIX infraction is reported.
+Sent when a PIX withdrawal is liquidated successfully.
+
+<ResponseExample>
+```json TRANSFER
+{
+  "type": "TRANSFER",
+  "data": {
+    "id": "id_pixout",
+    "txId": "txtId_da_transferencia",
+    "pixKey": "chave_pix_destino",
+    "status": "LIQUIDATED",
+    "payment": {
+      "amount": "50.00",
+      "currency": "BRL"
+    },
+    "endToEndId": "E12345678202501191045XYZ789",
+    "createdAt": "2025-01-19T10:45:00.000Z",
+    "webhookType": "TRANSFER",
+    "location": "pix",
+    "externalId": "external_id_saque",
+    "creditorAccount": {
+      "name": "Nome do Destinatário",
+      "document": "98765432100",
+      "accountType": "CACC"
+    },
+    "debtorAccount": {
+      "name": "useativo",
+      "document": null,
+      "accountType": "CACC"
+    },
+    "checksum": "hash_checksum"
+  }
+}
+```
+</ResponseExample>
+
+## CASHOUT - PIX Withdrawal Rejected/Cancelled
+
+Sent when a PIX withdrawal is rejected or cancelled by the bank.
+
+<ResponseExample>
+```json CASHOUT
+{
+  "type": "CASHOUT",
+  "data": {
+    "status": "REJECTED",
+    "message": "pagamento estornado do banco pagador.",
+    "createdAt": "2025-01-19T11:00:00.000Z",
+    "endToEndId": "E12345678202501191100ABC456",
+    "webhookType": "CASHOUT",
+    "idempotencyKey": "idempotency_key_ou_external_id"
+  },
+  "transaction": {
+    "status": "REJECTED",
+    "message": "pagamento estornado.",
+    "reference": "idempotency_key_ou_external_id"
+  }
+}
+```
+</ResponseExample>
+
+## REFUND - Transaction Refunded
+
+Sent when a PIX transaction (deposit or withdrawal) is refunded.
+
+<ResponseExample>
+```json REFUND
+{
+  "type": "REFUND",
+  "data": {
+    "id": "txtId_original",
+    "status": "REFUNDED",
+    "payment": {
+      "amount": "100.00",
+      "currency": "BRL"
+    },
+    "createdAt": "2025-01-19T11:15:00.000Z",
+    "webhookType": "REFUND",
+    "location": "pix",
+    "endToEndId": "E12345678202501191115DEF789",
+    "txId": "txtId_original",
+    "externalId": "external_id_original",
+    "refundId": "id_do_estorno",
+    "originalAmount": "100.00",
+    "refundAmount": "100.00",
+    "checksum": "hash_checksum"
+  }
+}
+```
+</ResponseExample>
+
+### Refund Types
+
+- **PixIn Refund**: Deposit refund (debits user balance)
+- **PixOut Refund**: Withdrawal refund (credits user balance)
+
+## INFRACTION - PIX Infraction Reported
+
+Sent when a PIX infraction is reported (status ACKNOWLEDGED).
 
 <ResponseExample>
 ```json INFRACTION_REPORTED
 {
-  "type": "INFRACTION_REPORTED",
+  "type": "INFRACTION",
   "data": {
-    "infractionId": "inf_123456789",
-    "endToEndId": "E12345678202401151234567890",
-    "transactionId": "tx_123456789",
-    "amount": 10.50,
+    "id": "infraction_id",
+    "type": "REFUND_REQUEST",
     "status": "ACKNOWLEDGED",
-    "gateway": "treeal",
-    "externalId": "order_123",
-    "reportDetails": {
-      "reportedBy": "Banco do Brasil",
-      "reason": "Suspicious transaction pattern",
-      "creationDate": "2024-01-15T10:30:00Z"
+    "endToEndId": "E12345678202501191130GHI012",
+    "reportedBy": "DEBTOR",
+    "creationDate": "2025-01-19T11:30:00.000Z",
+    "reportDetails": "Fraude reportada pelo pagador",
+    "analysisResult": null,
+    "analysisDetails": null,
+    "transactionAmount": {
+      "amount": "200.00",
+      "currency": "BRL"
     },
-    "timestamp": "2024-01-15T10:30:00Z"
-  },
-  "timestamp": "2024-01-15T10:30:00Z",
-  "signature": "sha256=abc123..."
+    "lastModificationDate": "2025-01-19T11:30:00.000Z"
+  }
 }
 ```
 </ResponseExample>
+
+## INFRACTION - PIX Infraction Closed
+
+Sent when a PIX infraction is finalized with a result (AGREED or DISAGREED).
+
+<ResponseExample>
+```json INFRACTION_CLOSED
+{
+  "type": "INFRACTION",
+  "data": {
+    "id": "infraction_id",
+    "type": "REFUND_REQUEST",
+    "status": "CLOSED",
+    "endToEndId": "E12345678202501191145JKL345",
+    "reportedBy": "DEBTOR",
+    "creationDate": "2025-01-19T11:30:00.000Z",
+    "reportDetails": "Fraude confirmada",
+    "transactionId": "transaction_id",
+    "analysisResult": "AGREED",
+    "analysisDetails": "Contestação procedente",
+    "transactionAmount": {
+      "amount": "200.00",
+      "currency": "BRL"
+    },
+    "lastModificationDate": "2025-01-19T11:45:00.000Z"
+  }
+}
+```
+</ResponseExample>
+
+### Analysis Result Values
+
+- **AGREED**: Contest accepted (amount will be refunded)
+- **DISAGREED**: Contest rejected (amount maintained)
 
 ## Webhook Security
 

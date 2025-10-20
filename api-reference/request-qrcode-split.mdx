@@ -145,19 +145,17 @@ function generateQrCodeSplit($amount, $devedor, $splits, $webhookUrl) {
 <ResponseExample>
 ```json Success
 {
-  "success": true,
-  "qrCode": "00020126580014br.gov.bcb.pix0136123e4567-e89b-12d3-a456-426614174000520400005303986540510.005802BR5913Fulano de Tal6008Brasilia62070503***63041D3D",
-  "qrCodeImage": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
-  "transactionId": "tx_123456789",
-  "amount": 10.00,
-  "splits": [
-    {
-      "username": "partner1",
-      "percentageSplit": "50",
-      "amount": 5.00
-    }
-  ],
-  "status": "pending"
+  "txid": "9706d9c3a34445a33ce716761bb3b5",
+  "id": "9706d9c3a34445a33ce716761bb3b5", 
+  "status": "PROCESSING",
+  "name": "BRL",
+  "type": "PIX",
+  "amount": "10.00",
+  "operation": "DEPOSIT",
+  "pixCopiaECola": "00020101021226880014br.gov.bcb.pix...",
+  "checksum": "ae62472c87b72b7cd6354e817ba8cde670d6e27de1dea037deb92ca13c119ccf",
+  "location": "pix",
+  "qrCode": "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAAAklEQVR4AewaftIAAAz5SURBVO3BQY4kORIEQVOi/v9l3T4m/BIEJ7K2Z2gi+Eeq6korVXWtlaq61kpVXWulqq61UlXXWqmqa61U1bVWqupaK1V1rZ9sAvI3UDMBmdR8ArJDzQRkUvNNQHaoeQJkUjMBOaFmB5BJzQTkiZpTQCY1T4BMaiYgfwM1T1aq6lorVXWtlaq61kpVXesn/4CabwKyQ80E5JOaHUB2AJnUfAIyqZmATGomIE+ATGomIJOaCcik5gmQU2omIJ+A7FAzqZmAfJOabwJyYqWqrrVSVddaqaprrVTVtX7yMiAn1LxJzRMgk5oJyFuAvAnIEyBvAnJCzW8DMqmZ1ExAvgnICTVvWamqa61U1bVWqupaK1V1rZ/8BwCZ1HyTmgnIJzU7gExAJjVPgOxQMwHZoeYTkEnNDiCTmknNEyA7gExqnqj5r1mpqmutVNW1VqrqWj/5jwLySc2kZgLyFiBvAvIWIG9R8zdQ8yY1/3UrVXWtlaq61kpVXWulqq71k5ep+RuoeQJkUnNKzScgk5oJyKRmAjKp+QRkUnMKyBMgp9TsAPJJzQ4gk5oJyKTmm9T8v61U1bVWqupaK1V1rZWqutZP/gEg/xZAJjUTkEnNBGRS828BZFLzFjUTkB1AJjWfgExqvgnIpGYHkL/RSlVda6WqrrVSVddaqapr/WSTmn8TIE+ATGpOATmhZoeaCcgJNW9RMwGZ1ExAJjUTkN8G5ISaf4uVqrrWSlVda6WqrrVSVdf6ySYgk5oTQCY1E5BvUvNNaiYgk5oJyKTmBJC/AZC3qNmhZoeaCcgTIN+kZgeQSc2Tlaq61kpVXWulqq61UlXXwj/yIiBvUbMDyKTmBJBJzQRkUvMWIJOaCcgnNTuATGp2AHmi5hSQ36bmm4BMap4AmdS8ZaWqrrVSVddaqapr/eRlaiYgJ4BMaiY1T4BMak6pOQFkUjOpmYBMav4tgExqfpuaCcgTNROQHWpOqPmmlaq61kpVXWulqq61UlXX+sn/gZo3ATkB5E1APqnZAWRSswPICTXfBGRSs0PNEyCTmt+m5k1AnqiZgExqnqxU1bVWqupaK1V1rZWqutZP/hJATql5C5AJyKRmUnNCzQRkh5pPQCY1E5BJzQTkiZoJyARkUrMDyCc1O4B8E5BJzW9Tc2Klqq61UlXXWqmqa61U1bV+sgnIKTWfgExq3gTkk5oJyKRmArIDyBM1E5BJzQ4gJ9RMQCY1E5BPQH4bkB1qJiCTmhNqJiCTmgnIEzU7gExqnqxU1bVWqupaK1V1rZWqutZPNqmZgHwTkB1qJjVvUTMBOQHkFJBJzRMgk5pJzTep2QFkUvMEyA41bwHyJjVPgExqTqxU1bVWqupaK1V1rZWquhb+kS8D8knNKSA71HwCskPNBGRScwLIpGYCckLNBGRSMwGZ1DwBsk"
 }
 ```
 </ResponseExample>
