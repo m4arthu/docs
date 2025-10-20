@@ -149,31 +149,10 @@
       "url": "https://mintlify.com/components/check"
     }
   ],
-  "search": {
-    "placeholder": "Search...",
-    "shortcut": "⌘K"
-  },
-  "ai": {
-    "provider": "openai",
-    "model": "gpt-4"
-  },
   "features": {
-    "search": {
-      "enabled": true,
-      "placeholder": "Search...",
-      "shortcut": "⌘K"
-    },
-    "ai": {
-      "enabled": true,
-      "placeholder": "Ask a question...",
-      "shortcut": "⌘I"
-    },
     "darkMode": true,
     "breadcrumbs": true,
-    "backToTop": true,
-    "editPage": {
-      "baseUrl": "https://github.com/braix/docs-api/edit/main"
-    }
+    "backToTop": true
   },
   "theme": "prism"
 }
