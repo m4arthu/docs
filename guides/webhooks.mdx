@@ -1,0 +1,320 @@
+---
+title: "Webhooks"
+description: "Guia completo para implementação e configuração de webhooks"
+---
+
+# Webhooks
+
+Os webhooks permitem que você receba notificações em tempo real sobre pagamentos PIX, estornos e outros eventos de transação. Este guia cobre a configuração e implementação de webhooks.
+
+## Visão Geral
+
+Os webhooks são notificações HTTP enviadas pela braix quando eventos específicos ocorrem em sua conta. Eles permitem que você mantenha seus sistemas sincronizados com as transações PIX sem precisar fazer polling constante da API.
+
+## Tipos de Webhooks
+
+<CardGroup cols={2}>
+<Card title="RECEIVE" icon="arrow-down" href="/guides/webhooks/receive">
+  Pagamento PIX recebido e liquidado
+</Card>
+
+<Card title="TRANSFER" icon="arrow-up" href="/guides/webhooks/transfer">
+  Saque PIX confirmado e liquidado
+</Card>
+
+<Card title="CASHOUT" icon="x" href="/guides/webhooks/cashout">
+  Saque PIX rejeitado ou cancelado
+</Card>
+
+<Card title="REFUND" icon="refresh-cw" href="/guides/webhooks/refund">
+  Transação estornada
+</Card>
+
+<Card title="INFRACTION" icon="alert-triangle" href="/guides/webhooks/infraction">
+  Infração PIX reportada ou finalizada
+</Card>
+</CardGroup>
+
+## Configuração Básica
+
+### 1. Configurar URL do Webhook
+
+Configure a URL do webhook no Dashboard da braix:
+
+1. Acesse o [Dashboard](https://dashboard.braix.com.br)
+2. Vá para **Configurações** > **Webhooks**
+3. Adicione sua URL de webhook
+4. Selecione os eventos que deseja receber
+
+### 2. Implementar Endpoint
+
+Seu endpoint deve:
+
+- Aceitar requisições POST
+- Retornar status HTTP 200 para sucesso
+- Responder em até 30 segundos
+- Processar o payload JSON
+
+<CodeGroup>
+```javascript Node.js
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+app.post('/webhooks/braix', (req, res) => {
+  const { type, data } = req.body;
+  
+  // Processar webhook baseado no tipo
+  switch (type) {
+    case 'RECEIVE':
+      handleReceive(data);
+      break;
+    case 'TRANSFER':
+      handleTransfer(data);
+      break;
+    case 'CASHOUT':
+      handleCashout(data);
+      break;
+    case 'REFUND':
+      handleRefund(data);
+      break;
+    case 'INFRACTION':
+      handleInfraction(data);
+      break;
+  }
+  
+  res.status(200).json({ received: true });
+});
+
+app.listen(3000, () => {
+  console.log('Webhook server running on port 3000');
+});
+```
+
+```python Python
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+@app.route('/webhooks/braix', methods=['POST'])
+def handle_webhook():
+    data = request.get_json()
+    webhook_type = data.get('type')
+    webhook_data = data.get('data')
+    
+    # Processar webhook baseado no tipo
+    if webhook_type == 'RECEIVE':
+        handle_receive(webhook_data)
+    elif webhook_type == 'TRANSFER':
+        handle_transfer(webhook_data)
+    elif webhook_type == 'CASHOUT':
+        handle_cashout(webhook_data)
+    elif webhook_type == 'REFUND':
+        handle_refund(webhook_data)
+    elif webhook_type == 'INFRACTION':
+        handle_infraction(webhook_data)
+    
+    return jsonify({'received': True}), 200
+
+if __name__ == '__main__':
+    app.run(port=3000)
+```
+</CodeGroup>
+
+## Validação de Segurança
+
+### Verificação de Checksum
+
+Todos os webhooks incluem um campo `checksum` que deve ser validado para garantir a autenticidade:
+
+<CodeGroup>
+```javascript Node.js
+const crypto = require('crypto');
+
+const verifyChecksum = (data, receivedChecksum, secret) => {
+  // O checksum é calculado com base nos dados da transação original
+  // Deve ser o mesmo checksum retornado na requisição de geração do QR Code ou Payment
+  const expectedChecksum = crypto
+    .createHash('sha256')
+    .update(JSON.stringify(data))
+    .digest('hex');
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(receivedChecksum),
+    Buffer.from(expectedChecksum)
+  );
+};
+
+// No seu handler de webhook
+app.post('/webhooks/braix', (req, res) => {
+  const { data } = req.body;
+  const receivedChecksum = data.checksum;
+  
+  if (!verifyChecksum(data, receivedChecksum, process.env.WEBHOOK_SECRET)) {
+    return res.status(401).json({ error: 'Invalid checksum' });
+  }
+  
+  // Processar webhook
+  res.status(200).json({ received: true });
+});
+```
+
+```python Python
+import hashlib
+import hmac
+
+def verify_checksum(data, received_checksum, secret):
+    # O checksum é calculado com base nos dados da transação original
+    expected_checksum = hashlib.sha256(
+        json.dumps(data, sort_keys=True).encode()
+    ).hexdigest()
+    
+    return hmac.compare_digest(received_checksum, expected_checksum)
+
+# No seu handler de webhook
+@app.route('/webhooks/braix', methods=['POST'])
+def handle_webhook():
+    data = request.get_json()
+    received_checksum = data.get('data', {}).get('checksum')
+    
+    if not verify_checksum(data.get('data', {}), received_checksum, os.getenv('WEBHOOK_SECRET')):
+        return jsonify({'error': 'Invalid checksum'}), 401
+    
+    # Processar webhook
+    return jsonify({'received': True}), 200
+```
+</CodeGroup>
+
+## Política de Retry
+
+A braix implementa a seguinte política de retry para webhooks:
+
+- **Tentativa inicial**: Imediata
+- **Retry 1**: 1 minuto após falha
+- **Retry 2**: 5 minutos após falha
+- **Retry 3**: 15 minutos após falha
+- **Retry 4**: 1 hora após falha
+- **Retry 5**: 6 horas após falha
+
+<Warning>
+Webhooks que falham após todas as tentativas são marcados como falhados e não serão tentados novamente. Verifique regularmente o status de entrega dos webhooks no dashboard.
+</Warning>
+
+## Boas Práticas
+
+### 1. Idempotência
+
+Implemente idempotência para lidar com webhooks duplicados:
+
+```javascript
+const processedWebhooks = new Set();
+
+app.post('/webhooks/braix', (req, res) => {
+  const { data } = req.body;
+  const webhookId = data.id || data.txId;
+  
+  if (processedWebhooks.has(webhookId)) {
+    return res.status(200).json({ received: true, duplicate: true });
+  }
+  
+  processedWebhooks.add(webhookId);
+  
+  // Processar webhook
+  processWebhook(data);
+  
+  res.status(200).json({ received: true });
+});
+```
+
+### 2. Processamento Assíncrono
+
+Para operações que podem demorar, processe de forma assíncrona:
+
+```javascript
+const queue = require('bull');
+const webhookQueue = queue('webhook processing');
+
+app.post('/webhooks/braix', (req, res) => {
+  // Responder imediatamente
+  res.status(200).json({ received: true });
+  
+  // Processar em background
+  webhookQueue.add('process', req.body);
+});
+
+webhookQueue.process('process', async (job) => {
+  const { type, data } = job.data;
+  // Processar webhook aqui
+});
+```
+
+### 3. Logging e Monitoramento
+
+Sempre registre os webhooks recebidos:
+
+```javascript
+const winston = require('winston');
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.File({ filename: 'webhooks.log' })
+  ]
+});
+
+app.post('/webhooks/braix', (req, res) => {
+  logger.info('Webhook received', {
+    type: req.body.type,
+    data: req.body.data,
+    timestamp: new Date().toISOString()
+  });
+  
+  // Processar webhook
+  res.status(200).json({ received: true });
+});
+```
+
+## Testando Webhooks
+
+### Usando ngrok para Testes Locais
+
+<Steps>
+<Step title="Instalar ngrok">
+  Baixe e instale o ngrok em [ngrok.com](https://ngrok.com)
+</Step>
+
+<Step title="Iniciar Servidor">
+  Inicie seu servidor local na porta 3000
+</Step>
+
+<Step title="Expor com ngrok">
+  Execute `ngrok http 3000` para obter uma URL pública
+</Step>
+
+<Step title="Configurar URL do Webhook">
+  Use a URL do ngrok como URL do webhook no Dashboard da braix
+</Step>
+</Steps>
+
+### Ferramentas de Teste
+
+<CardGroup cols={2}>
+<Card title="Webhook.site" icon="globe" href="https://webhook.site">
+  Teste endpoints de webhook com URL temporária
+</Card>
+
+<Card title="RequestBin" icon="code" href="https://requestbin.com">
+  Crie endpoints temporários para inspecionar payloads de webhook
+</Card>
+</CardGroup>
+
+## Próximos Passos
+
+Agora que você entende os conceitos básicos, explore os guias específicos para cada tipo de webhook:
+
+- [RECEIVE - Pagamentos Recebidos](/guides/webhooks/receive)
+- [TRANSFER - Saques Confirmados](/guides/webhooks/transfer)
+- [CASHOUT - Saques Rejeitados](/guides/webhooks/cashout)
+- [REFUND - Estornos](/guides/webhooks/refund)
+- [INFRACTION - Infrações PIX](/guides/webhooks/infraction)

@@ -1,0 +1,395 @@
+---
+title: "REFUND - Estornos"
+description: "Webhook para transações PIX estornadas"
+---
+
+# REFUND - Estornos
+
+O webhook **REFUND** é enviado quando uma transação PIX (depósito ou saque) é estornada.
+
+## Quando é Enviado
+
+- Estorno de pagamento recebido (PixIn)
+- Estorno de saque realizado (PixOut)
+- Reversão de transação
+- Cancelamento de transação já processada
+
+## Payload do Webhook
+
+<ResponseExample>
+```json
+{
+  "type": "REFUND",
+  "data": {
+    "id": "txtId_original",
+    "status": "REFUNDED",
+    "payment": {
+      "amount": "100.00",
+      "currency": "BRL"
+    },
+    "createdAt": "2025-01-19T11:15:00.000Z",
+    "webhookType": "REFUND",
+    "location": "pix",
+    "endToEndId": "E12345678202501191115DEF789",
+    "txId": "txtId_original",
+    "externalId": "external_id_original",
+    "refundId": "id_do_estorno",
+    "originalAmount": "100.00",
+    "refundAmount": "100.00",
+    "checksum": "hash_checksum"
+  }
+}
+```
+</ResponseExample>
+
+## Campos do Payload
+
+<ParamField body="id" type="string">
+  ID da transação original
+</ParamField>
+
+<ParamField body="status" type="string">
+  Status da transação (sempre "REFUNDED" para REFUND)
+</ParamField>
+
+<ParamField body="payment.amount" type="string">
+  Valor do estorno em formato decimal
+</ParamField>
+
+<ParamField body="payment.currency" type="string">
+  Moeda do estorno (sempre "BRL")
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  Data e hora do estorno em ISO 8601
+</ParamField>
+
+<ParamField body="webhookType" type="string">
+  Tipo do webhook (sempre "REFUND")
+</ParamField>
+
+<ParamField body="location" type="string">
+  Localização da transação (sempre "pix")
+</ParamField>
+
+<ParamField body="endToEndId" type="string">
+  ID end-to-end da transação original
+</ParamField>
+
+<ParamField body="txId" type="string">
+  ID da transação original no sistema PIX
+</ParamField>
+
+<ParamField body="externalId" type="string">
+  ID externo da transação original
+</ParamField>
+
+<ParamField body="refundId" type="string">
+  ID único do estorno
+</ParamField>
+
+<ParamField body="originalAmount" type="string">
+  Valor original da transação
+</ParamField>
+
+<ParamField body="refundAmount" type="string">
+  Valor estornado (pode ser parcial)
+</ParamField>
+
+<ParamField body="checksum" type="string">
+  Hash de verificação da transação
+</ParamField>
+
+## Tipos de Estorno
+
+<CardGroup cols={2}>
+<Card title="PixIn Refund" icon="arrow-down">
+  **Estorno de Depósito**
+  - Debitar saldo do usuário
+  - Reverter crédito recebido
+  - Atualizar histórico de transações
+</Card>
+
+<Card title="PixOut Refund" icon="arrow-up">
+  **Estorno de Saque**
+  - Creditar saldo do usuário
+  - Reverter débito realizado
+  - Atualizar histórico de transações
+</Card>
+</CardGroup>
+
+## Implementação
+
+### Exemplo em Node.js
+
+```javascript
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+app.post('/webhooks/braix', (req, res) => {
+  const { type, data } = req.body;
+  
+  if (type === 'REFUND') {
+    handleRefundWebhook(data);
+  }
+  
+  res.status(200).json({ received: true });
+});
+
+function handleRefundWebhook(data) {
+  console.log('Estorno processado:', {
+    id: data.id,
+    refundId: data.refundId,
+    originalAmount: data.originalAmount,
+    refundAmount: data.refundAmount,
+    externalId: data.externalId,
+    endToEndId: data.endToEndId
+  });
+  
+  // Aqui você pode:
+  // - Atualizar saldo do usuário
+  // - Enviar notificação de estorno
+  // - Atualizar status da transação
+  // - Processar comissões
+  // - Etc.
+}
+
+app.listen(3000, () => {
+  console.log('Webhook server running on port 3000');
+});
+```
+
+### Exemplo em Python
+
+```python
+from flask import Flask, request, jsonify
+import json
+
+app = Flask(__name__)
+
+@app.route('/webhooks/braix', methods=['POST'])
+def handle_webhook():
+    data = request.get_json()
+    
+    if data.get('type') == 'REFUND':
+        handle_refund_webhook(data.get('data'))
+    
+    return jsonify({'received': True}), 200
+
+def handle_refund_webhook(data):
+    print(f"Estorno processado: {json.dumps(data, indent=2)}")
+    
+    # Aqui você pode:
+    # - Atualizar saldo do usuário
+    # - Enviar notificação de estorno
+    # - Atualizar status da transação
+    # - Processar comissões
+    # - Etc.
+
+if __name__ == '__main__':
+    app.run(port=3000)
+```
+
+## Casos de Uso Comuns
+
+### 1. Atualizar Saldo do Usuário
+
+```javascript
+async function handleRefundWebhook(data) {
+  const userId = data.externalId;
+  const refundAmount = parseFloat(data.refundAmount);
+  const originalAmount = parseFloat(data.originalAmount);
+  
+  // Determinar se é estorno de depósito ou saque
+  const isPixInRefund = await isPixInTransaction(data.id);
+  
+  if (isPixInRefund) {
+    // Estorno de depósito: debitar saldo
+    await updateUserBalance(userId, -refundAmount);
+    console.log(`Saldo debitado: -R$ ${refundAmount} (estorno de depósito)`);
+  } else {
+    // Estorno de saque: creditar saldo
+    await updateUserBalance(userId, refundAmount);
+    console.log(`Saldo creditado: +R$ ${refundAmount} (estorno de saque)`);
+  }
+}
+```
+
+### 2. Enviar Notificação de Estorno
+
+```javascript
+async function handleRefundWebhook(data) {
+  const refundAmount = data.refundAmount;
+  const originalAmount = data.originalAmount;
+  const isPartial = parseFloat(refundAmount) < parseFloat(originalAmount);
+  
+  // Enviar email de notificação
+  await sendEmail({
+    to: 'user@example.com',
+    subject: 'Estorno Processado',
+    body: `Seu estorno de R$ ${refundAmount} foi processado${isPartial ? ' (parcial)' : ''}.`
+  });
+  
+  // Enviar SMS
+  await sendSMS({
+    to: '+5511999999999',
+    message: `Estorno de R$ ${refundAmount} processado!`
+  });
+}
+```
+
+### 3. Atualizar Status da Transação
+
+```javascript
+async function handleRefundWebhook(data) {
+  const transactionId = data.id;
+  const refundId = data.refundId;
+  const status = 'REFUNDED';
+  
+  // Atualizar status no banco de dados
+  await updateTransactionStatus(transactionId, status);
+  
+  // Registrar estorno
+  await recordRefund({
+    transactionId,
+    refundId,
+    amount: data.refundAmount,
+    originalAmount: data.originalAmount,
+    timestamp: new Date()
+  });
+  
+  // Registrar histórico
+  await logTransactionEvent({
+    transactionId,
+    event: 'REFUND_PROCESSED',
+    timestamp: new Date(),
+    details: data
+  });
+  
+  console.log(`Transação ${transactionId} estornada: ${refundId}`);
+}
+```
+
+### 4. Processar Comissões
+
+```javascript
+async function handleRefundWebhook(data) {
+  const refundAmount = parseFloat(data.refundAmount);
+  const originalAmount = parseFloat(data.originalAmount);
+  const isPixInRefund = await isPixInTransaction(data.id);
+  
+  if (isPixInRefund) {
+    // Estorno de depósito: reverter comissão
+    const commission = refundAmount * 0.02; // 2% de comissão
+    await reverseCommission({
+      transactionId: data.id,
+      amount: -commission,
+      type: 'REFUND_PIXIN'
+    });
+    
+    console.log(`Comissão revertida: -R$ ${commission}`);
+  } else {
+    // Estorno de saque: reverter comissão
+    const commission = refundAmount * 0.01; // 1% de comissão
+    await reverseCommission({
+      transactionId: data.id,
+      amount: -commission,
+      type: 'REFUND_PIXOUT'
+    });
+    
+    console.log(`Comissão revertida: -R$ ${commission}`);
+  }
+}
+```
+
+## Estornos Parciais vs Completos
+
+### Estorno Completo
+
+```json
+{
+  "originalAmount": "100.00",
+  "refundAmount": "100.00"
+}
+```
+
+- Valor estornado igual ao valor original
+- Transação completamente revertida
+- Status final: REFUNDED
+
+### Estorno Parcial
+
+```json
+{
+  "originalAmount": "100.00",
+  "refundAmount": "50.00"
+}
+```
+
+- Valor estornado menor que o valor original
+- Transação parcialmente revertida
+- Status final: PARTIALLY_REFUNDED
+
+## Validação de Segurança
+
+Sempre valide o checksum para garantir a autenticidade:
+
+```javascript
+const crypto = require('crypto');
+
+function verifyChecksum(data, receivedChecksum) {
+  // O checksum é calculado com base nos dados da transação original
+  const expectedChecksum = crypto
+    .createHash('sha256')
+    .update(JSON.stringify(data))
+    .digest('hex');
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(receivedChecksum),
+    Buffer.from(expectedChecksum)
+  );
+}
+
+function handleRefundWebhook(data) {
+  if (!verifyChecksum(data, data.checksum)) {
+    console.error('Checksum inválido');
+    return;
+  }
+  
+  // Processar webhook com segurança
+  processRefund(data);
+}
+```
+
+## Troubleshooting
+
+### Problemas Comuns
+
+<AccordionGroup>
+<Accordion title="Webhook não recebido">
+  - Verifique se a URL está configurada corretamente no dashboard
+  - Confirme se o endpoint está retornando status 200
+  - Verifique os logs de retry no dashboard
+</Accordion>
+
+<Accordion title="Checksum inválido">
+  - Confirme se está usando o mesmo secret da requisição original
+  - Verifique se o payload não foi modificado antes da verificação
+  - Compare com o checksum retornado na transação original
+</Accordion>
+
+<Accordion title="Falha na atualização de saldo">
+  - Verifique se a transação original existe
+  - Confirme se o tipo de estorno está correto (PixIn vs PixOut)
+  - Implemente logs detalhados para debugging
+</Accordion>
+</AccordionGroup>
+
+## Próximos Passos
+
+- [RECEIVE - Pagamentos Recebidos](/guides/webhooks/receive)
+- [TRANSFER - Saques Confirmados](/guides/webhooks/transfer)
+- [CASHOUT - Saques Rejeitados](/guides/webhooks/cashout)
+- [INFRACTION - Infrações PIX](/guides/webhooks/infraction)

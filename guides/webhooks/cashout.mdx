@@ -1,0 +1,341 @@
+---
+title: "CASHOUT - Saques Rejeitados"
+description: "Webhook para saques PIX rejeitados ou cancelados"
+---
+
+# CASHOUT - Saques Rejeitados
+
+O webhook **CASHOUT** é enviado quando um saque PIX é rejeitado ou cancelado pelo banco.
+
+## Quando é Enviado
+
+- Saque PIX rejeitado pelo banco
+- Transferência cancelada
+- Erro no processamento do saque
+- Transação estornada pelo banco pagador
+
+## Payload do Webhook
+
+<ResponseExample>
+```json
+{
+  "type": "CASHOUT",
+  "data": {
+    "status": "REJECTED",
+    "message": "pagamento estornado do banco pagador.",
+    "createdAt": "2025-01-19T11:00:00.000Z",
+    "endToEndId": "E12345678202501191100ABC456",
+    "webhookType": "CASHOUT",
+    "idempotencyKey": "idempotency_key_ou_external_id"
+  },
+  "transaction": {
+    "status": "REJECTED",
+    "message": "pagamento estornado.",
+    "reference": "idempotency_key_ou_external_id"
+  }
+}
+```
+</ResponseExample>
+
+## Campos do Payload
+
+<ParamField body="data.status" type="string">
+  Status da transação (REJECTED, CANCELLED, etc.)
+</ParamField>
+
+<ParamField body="data.message" type="string">
+  Mensagem de erro ou motivo da rejeição
+</ParamField>
+
+<ParamField body="data.createdAt" type="string">
+  Data e hora da rejeição em ISO 8601
+</ParamField>
+
+<ParamField body="data.endToEndId" type="string">
+  ID end-to-end da transação PIX
+</ParamField>
+
+<ParamField body="data.webhookType" type="string">
+  Tipo do webhook (sempre "CASHOUT")
+</ParamField>
+
+<ParamField body="data.idempotencyKey" type="string">
+  Chave de idempotência ou external ID do saque
+</ParamField>
+
+<ParamField body="transaction.status" type="string">
+  Status da transação (sempre igual ao data.status)
+</ParamField>
+
+<ParamField body="transaction.message" type="string">
+  Mensagem de erro da transação
+</ParamField>
+
+<ParamField body="transaction.reference" type="string">
+  Referência da transação (idempotency key)
+</ParamField>
+
+## Implementação
+
+### Exemplo em Node.js
+
+```javascript
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+app.post('/webhooks/braix', (req, res) => {
+  const { type, data, transaction } = req.body;
+  
+  if (type === 'CASHOUT') {
+    handleCashoutWebhook(data, transaction);
+  }
+  
+  res.status(200).json({ received: true });
+});
+
+function handleCashoutWebhook(data, transaction) {
+  console.log('Saque rejeitado:', {
+    status: data.status,
+    message: data.message,
+    endToEndId: data.endToEndId,
+    idempotencyKey: data.idempotencyKey,
+    reference: transaction.reference
+  });
+  
+  // Aqui você pode:
+  // - Reverter saldo do usuário
+  // - Enviar notificação de erro
+  // - Atualizar status da transação
+  // - Registrar motivo da rejeição
+  // - Etc.
+}
+
+app.listen(3000, () => {
+  console.log('Webhook server running on port 3000');
+});
+```
+
+### Exemplo em Python
+
+```python
+from flask import Flask, request, jsonify
+import json
+
+app = Flask(__name__)
+
+@app.route('/webhooks/braix', methods=['POST'])
+def handle_webhook():
+    data = request.get_json()
+    
+    if data.get('type') == 'CASHOUT':
+        handle_cashout_webhook(data.get('data'), data.get('transaction'))
+    
+    return jsonify({'received': True}), 200
+
+def handle_cashout_webhook(data, transaction):
+    print(f"Saque rejeitado: {json.dumps(data, indent=2)}")
+    print(f"Transação: {json.dumps(transaction, indent=2)}")
+    
+    # Aqui você pode:
+    # - Reverter saldo do usuário
+    # - Enviar notificação de erro
+    # - Atualizar status da transação
+    # - Registrar motivo da rejeição
+    # - Etc.
+
+if __name__ == '__main__':
+    app.run(port=3000)
+```
+
+## Casos de Uso Comuns
+
+### 1. Reverter Saldo do Usuário
+
+```javascript
+async function handleCashoutWebhook(data, transaction) {
+  const userId = data.idempotencyKey; // Assumindo que idempotencyKey é o ID do usuário
+  const originalAmount = await getOriginalTransactionAmount(data.endToEndId);
+  
+  // Reverter débito do saldo do usuário
+  await updateUserBalance(userId, originalAmount);
+  
+  console.log(`Saldo revertido: +R$ ${originalAmount} para usuário ${userId}`);
+}
+```
+
+### 2. Enviar Notificação de Erro
+
+```javascript
+async function handleCashoutWebhook(data, transaction) {
+  const message = data.message;
+  const status = data.status;
+  
+  // Enviar email de notificação
+  await sendEmail({
+    to: 'user@example.com',
+    subject: 'Saque Rejeitado',
+    body: `Seu saque foi rejeitado. Motivo: ${message}`
+  });
+  
+  // Enviar SMS
+  await sendSMS({
+    to: '+5511999999999',
+    message: `Saque rejeitado: ${message}`
+  });
+}
+```
+
+### 3. Atualizar Status da Transação
+
+```javascript
+async function handleCashoutWebhook(data, transaction) {
+  const transactionId = data.idempotencyKey;
+  const status = 'REJECTED';
+  const reason = data.message;
+  
+  // Atualizar status no banco de dados
+  await updateTransactionStatus(transactionId, status, reason);
+  
+  // Registrar histórico
+  await logTransactionEvent({
+    transactionId,
+    event: 'CASHOUT_REJECTED',
+    timestamp: new Date(),
+    details: { data, transaction }
+  });
+  
+  console.log(`Transação ${transactionId} marcada como ${status}: ${reason}`);
+}
+```
+
+### 4. Registrar Motivo da Rejeição
+
+```javascript
+async function handleCashoutWebhook(data, transaction) {
+  const rejectionReason = data.message;
+  const endToEndId = data.endToEndId;
+  
+  // Registrar motivo da rejeição
+  await recordRejectionReason({
+    endToEndId,
+    reason: rejectionReason,
+    status: data.status,
+    timestamp: new Date()
+  });
+  
+  // Analisar padrões de rejeição
+  await analyzeRejectionPatterns(rejectionReason);
+  
+  console.log(`Motivo da rejeição registrado: ${rejectionReason}`);
+}
+```
+
+## Tipos de Rejeição
+
+### Status Possíveis
+
+<AccordionGroup>
+<Accordion title="REJECTED">
+  **Rejeitado pelo banco**
+  - Dados incorretos
+  - Saldo insuficiente
+  - Conta bloqueada
+  - Limite excedido
+</Accordion>
+
+<Accordion title="CANCELLED">
+  **Cancelado pelo sistema**
+  - Timeout na transação
+  - Erro de processamento
+  - Cancelamento manual
+  - Falha de comunicação
+</Accordion>
+
+<Accordion title="FAILED">
+  **Falha na transação**
+  - Erro técnico
+  - Indisponibilidade do banco
+  - Problema de conectividade
+  - Erro de validação
+</Accordion>
+</AccordionGroup>
+
+### Mensagens Comuns
+
+- `"pagamento estornado do banco pagador"`
+- `"saldo insuficiente"`
+- `"conta bloqueada"`
+- `"dados incorretos"`
+- `"limite excedido"`
+- `"timeout na transação"`
+
+## Validação de Segurança
+
+Como o webhook CASHOUT não possui checksum, valide usando outros campos:
+
+```javascript
+function validateCashoutWebhook(data, transaction) {
+  // Validar campos obrigatórios
+  if (!data.status || !data.message || !data.endToEndId) {
+    console.error('Campos obrigatórios ausentes');
+    return false;
+  }
+  
+  // Validar consistência entre data e transaction
+  if (data.status !== transaction.status) {
+    console.error('Status inconsistente entre data e transaction');
+    return false;
+  }
+  
+  // Validar idempotency key
+  if (data.idempotencyKey !== transaction.reference) {
+    console.error('Idempotency key inconsistente');
+    return false;
+  }
+  
+  return true;
+}
+
+function handleCashoutWebhook(data, transaction) {
+  if (!validateCashoutWebhook(data, transaction)) {
+    console.error('Webhook CASHOUT inválido');
+    return;
+  }
+  
+  // Processar webhook com segurança
+  processCashout(data, transaction);
+}
+```
+
+## Troubleshooting
+
+### Problemas Comuns
+
+<AccordionGroup>
+<Accordion title="Webhook não recebido">
+  - Verifique se a URL está configurada corretamente no dashboard
+  - Confirme se o endpoint está retornando status 200
+  - Verifique os logs de retry no dashboard
+</Accordion>
+
+<Accordion title="Processamento duplicado">
+  - Implemente verificação de idempotência usando o campo `idempotencyKey`
+  - Armazene IDs processados para evitar duplicatas
+  - Use transações de banco de dados para operações atômicas
+</Accordion>
+
+<Accordion title="Falha na reversão de saldo">
+  - Verifique se o valor original foi armazenado corretamente
+  - Confirme se a transação original existe
+  - Implemente logs detalhados para debugging
+</Accordion>
+</AccordionGroup>
+
+## Próximos Passos
+
+- [RECEIVE - Pagamentos Recebidos](/guides/webhooks/receive)
+- [TRANSFER - Saques Confirmados](/guides/webhooks/transfer)
+- [REFUND - Estornos](/guides/webhooks/refund)
+- [INFRACTION - Infrações PIX](/guides/webhooks/infraction)

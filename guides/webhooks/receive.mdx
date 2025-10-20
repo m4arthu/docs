@@ -1,0 +1,296 @@
+---
+title: "RECEIVE - Pagamentos Recebidos"
+description: "Webhook para pagamentos PIX recebidos e liquidados"
+---
+
+# RECEIVE - Pagamentos Recebidos
+
+O webhook **RECEIVE** é enviado quando um pagamento PIX é confirmado e liquidado em sua conta.
+
+## Quando é Enviado
+
+- Pagamento PIX recebido via QR Code
+- Pagamento PIX recebido via chave PIX
+- Pagamento confirmado pelo banco
+- Valor liquidado em sua conta
+
+## Payload do Webhook
+
+<ResponseExample>
+```json
+{
+  "type": "RECEIVE",
+  "data": {
+    "id": "txtId_ou_id_da_transacao",
+    "status": "LIQUIDATED",
+    "payment": {
+      "amount": "100.00",
+      "currency": "BRL"
+    },
+    "createdAt": "2025-01-19T10:30:00.000Z",
+    "webhookType": "RECEIVE",
+    "location": "pix",
+    "endToEndId": "E12345678202501191030ABC123",
+    "txId": "txtId_da_transacao",
+    "externalId": "external_id_do_cliente",
+    "debtorAccount": {
+      "name": "Nome do Pagador",
+      "document": "12345678900",
+      "accountType": "CACC"
+    },
+    "checksum": "hash_checksum"
+  }
+}
+```
+</ResponseExample>
+
+## Campos do Payload
+
+<ParamField body="id" type="string">
+  ID único da transação na braix
+</ParamField>
+
+<ParamField body="status" type="string">
+  Status da transação (sempre "LIQUIDATED" para RECEIVE)
+</ParamField>
+
+<ParamField body="payment.amount" type="string">
+  Valor do pagamento em formato decimal
+</ParamField>
+
+<ParamField body="payment.currency" type="string">
+  Moeda do pagamento (sempre "BRL")
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  Data e hora da confirmação em ISO 8601
+</ParamField>
+
+<ParamField body="webhookType" type="string">
+  Tipo do webhook (sempre "RECEIVE")
+</ParamField>
+
+<ParamField body="location" type="string">
+  Localização da transação (sempre "pix")
+</ParamField>
+
+<ParamField body="endToEndId" type="string">
+  ID end-to-end da transação PIX
+</ParamField>
+
+<ParamField body="txId" type="string">
+  ID da transação no sistema PIX
+</ParamField>
+
+<ParamField body="externalId" type="string">
+  ID externo fornecido na criação do QR Code
+</ParamField>
+
+<ParamField body="debtorAccount.name" type="string">
+  Nome do pagador
+</ParamField>
+
+<ParamField body="debtorAccount.document" type="string">
+  CPF/CNPJ do pagador
+</ParamField>
+
+<ParamField body="debtorAccount.accountType" type="string">
+  Tipo da conta (sempre "CACC" para conta corrente)
+</ParamField>
+
+<ParamField body="checksum" type="string">
+  Hash de verificação da transação
+</ParamField>
+
+## Implementação
+
+### Exemplo em Node.js
+
+```javascript
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+app.post('/webhooks/braix', (req, res) => {
+  const { type, data } = req.body;
+  
+  if (type === 'RECEIVE') {
+    handleReceiveWebhook(data);
+  }
+  
+  res.status(200).json({ received: true });
+});
+
+function handleReceiveWebhook(data) {
+  console.log('Pagamento recebido:', {
+    id: data.id,
+    amount: data.payment.amount,
+    currency: data.payment.currency,
+    payer: data.debtorAccount.name,
+    document: data.debtorAccount.document,
+    externalId: data.externalId,
+    endToEndId: data.endToEndId
+  });
+  
+  // Aqui você pode:
+  // - Atualizar saldo do usuário
+  // - Enviar notificação por email/SMS
+  // - Atualizar banco de dados
+  // - Processar comissões
+  // - Etc.
+}
+
+app.listen(3000, () => {
+  console.log('Webhook server running on port 3000');
+});
+```
+
+### Exemplo em Python
+
+```python
+from flask import Flask, request, jsonify
+import json
+
+app = Flask(__name__)
+
+@app.route('/webhooks/braix', methods=['POST'])
+def handle_webhook():
+    data = request.get_json()
+    
+    if data.get('type') == 'RECEIVE':
+        handle_receive_webhook(data.get('data'))
+    
+    return jsonify({'received': True}), 200
+
+def handle_receive_webhook(data):
+    print(f"Pagamento recebido: {json.dumps(data, indent=2)}")
+    
+    # Aqui você pode:
+    # - Atualizar saldo do usuário
+    # - Enviar notificação por email/SMS
+    # - Atualizar banco de dados
+    # - Processar comissões
+    # - Etc.
+
+if __name__ == '__main__':
+    app.run(port=3000)
+```
+
+## Casos de Uso Comuns
+
+### 1. Atualizar Saldo do Usuário
+
+```javascript
+async function handleReceiveWebhook(data) {
+  const userId = data.externalId; // Assumindo que externalId é o ID do usuário
+  const amount = parseFloat(data.payment.amount);
+  
+  // Atualizar saldo no banco de dados
+  await updateUserBalance(userId, amount);
+  
+  console.log(`Saldo atualizado: +R$ ${amount} para usuário ${userId}`);
+}
+```
+
+### 2. Enviar Notificação
+
+```javascript
+async function handleReceiveWebhook(data) {
+  const amount = data.payment.amount;
+  const payer = data.debtorAccount.name;
+  
+  // Enviar email de confirmação
+  await sendEmail({
+    to: 'user@example.com',
+    subject: 'Pagamento Recebido',
+    body: `Você recebeu R$ ${amount} de ${payer}`
+  });
+  
+  // Enviar SMS
+  await sendSMS({
+    to: '+5511999999999',
+    message: `Pagamento de R$ ${amount} recebido!`
+  });
+}
+```
+
+### 3. Processar Comissões
+
+```javascript
+async function handleReceiveWebhook(data) {
+  const amount = parseFloat(data.payment.amount);
+  const commission = amount * 0.02; // 2% de comissão
+  
+  // Registrar comissão
+  await recordCommission({
+    transactionId: data.id,
+    amount: commission,
+    type: 'RECEIVE'
+  });
+  
+  console.log(`Comissão registrada: R$ ${commission}`);
+}
+```
+
+## Validação de Segurança
+
+Sempre valide o checksum para garantir a autenticidade:
+
+```javascript
+const crypto = require('crypto');
+
+function verifyChecksum(data, receivedChecksum) {
+  // O checksum deve ser o mesmo retornado na requisição de geração do QR Code
+  const expectedChecksum = crypto
+    .createHash('sha256')
+    .update(JSON.stringify(data))
+    .digest('hex');
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(receivedChecksum),
+    Buffer.from(expectedChecksum)
+  );
+}
+
+function handleReceiveWebhook(data) {
+  if (!verifyChecksum(data, data.checksum)) {
+    console.error('Checksum inválido');
+    return;
+  }
+  
+  // Processar webhook com segurança
+  processPayment(data);
+}
+```
+
+## Troubleshooting
+
+### Problemas Comuns
+
+<AccordionGroup>
+<Accordion title="Webhook não recebido">
+  - Verifique se a URL está configurada corretamente no dashboard
+  - Confirme se o endpoint está retornando status 200
+  - Verifique os logs de retry no dashboard
+</Accordion>
+
+<Accordion title="Checksum inválido">
+  - Confirme se está usando o mesmo secret da requisição original
+  - Verifique se o payload não foi modificado antes da verificação
+  - Compare com o checksum retornado na criação do QR Code
+</Accordion>
+
+<Accordion title="Processamento duplicado">
+  - Implemente verificação de idempotência usando o campo `id`
+  - Armazene IDs processados para evitar duplicatas
+  - Use transações de banco de dados para operações atômicas
+</Accordion>
+</AccordionGroup>
+
+## Próximos Passos
+
+- [TRANSFER - Saques Confirmados](/guides/webhooks/transfer)
+- [CASHOUT - Saques Rejeitados](/guides/webhooks/cashout)
+- [REFUND - Estornos](/guides/webhooks/refund)
+- [INFRACTION - Infrações PIX](/guides/webhooks/infraction)
