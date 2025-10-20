@@ -221,7 +221,13 @@ createPixQrCode();
 
 ## Step 5: Handle Webhooks
 
-Set up a webhook endpoint to receive payment notifications:
+Set up a webhook endpoint to receive PIX payment notifications. braix sends webhooks for the following events:
+
+- **RECEIVE**: PIX deposit confirmed and liquidated
+- **TRANSFER**: PIX withdrawal confirmed and liquidated  
+- **CASHOUT**: PIX withdrawal rejected or cancelled
+- **REFUND**: Transaction refunded (deposit or withdrawal)
+- **INFRACTION**: PIX infraction reported or closed
 
 <CodeGroup>
 ```javascript Node.js
@@ -233,9 +239,29 @@ app.use(express.json());
 app.post('/webhooks/braix', (req, res) => {
   const { type, data } = req.body;
   
-  if (type === 'PAYMENT_RECEIVED') {
-    console.log('Payment received:', data);
+  if (type === 'RECEIVE') {
+    console.log('PIX deposit received:', data);
     // Update your database, send confirmation email, etc.
+  }
+  
+  if (type === 'TRANSFER') {
+    console.log('PIX withdrawal completed:', data);
+    // Handle withdrawal completion
+  }
+  
+  if (type === 'CASHOUT') {
+    console.log('PIX withdrawal rejected:', data);
+    // Handle withdrawal rejection
+  }
+  
+  if (type === 'REFUND') {
+    console.log('Transaction refunded:', data);
+    // Handle refund
+  }
+  
+  if (type === 'INFRACTION') {
+    console.log('PIX infraction:', data);
+    // Handle infraction
   }
   
   res.status(200).json({ received: true });
@@ -256,9 +282,25 @@ def handle_webhook():
     data = request.get_json()
     webhook_type = data.get('type')
     
-    if webhook_type == 'PAYMENT_RECEIVED':
-        print('Payment received:', data.get('data'))
+    if webhook_type == 'RECEIVE':
+        print('PIX deposit received:', data.get('data'))
         # Update your database, send confirmation email, etc.
+    
+    if webhook_type == 'TRANSFER':
+        print('PIX withdrawal completed:', data.get('data'))
+        # Handle withdrawal completion
+    
+    if webhook_type == 'CASHOUT':
+        print('PIX withdrawal rejected:', data.get('data'))
+        # Handle withdrawal rejection
+    
+    if webhook_type == 'REFUND':
+        print('Transaction refunded:', data.get('data'))
+        # Handle refund
+    
+    if webhook_type == 'INFRACTION':
+        print('PIX infraction:', data.get('data'))
+        # Handle infraction
     
     return jsonify({'received': True})
 
@@ -274,9 +316,29 @@ $data = json_decode($input, true);
 
 $type = $data['type'] ?? null;
 
-if ($type === 'PAYMENT_RECEIVED') {
-    error_log('Payment received: ' . json_encode($data['data']));
+if ($type === 'RECEIVE') {
+    error_log('PIX deposit received: ' . json_encode($data['data']));
     // Update your database, send confirmation email, etc.
+}
+
+if ($type === 'TRANSFER') {
+    error_log('PIX withdrawal completed: ' . json_encode($data['data']));
+    // Handle withdrawal completion
+}
+
+if ($type === 'CASHOUT') {
+    error_log('PIX withdrawal rejected: ' . json_encode($data['data']));
+    // Handle withdrawal rejection
+}
+
+if ($type === 'REFUND') {
+    error_log('Transaction refunded: ' . json_encode($data['data']));
+    // Handle refund
+}
+
+if ($type === 'INFRACTION') {
+    error_log('PIX infraction: ' . json_encode($data['data']));
+    // Handle infraction
 }
 
 http_response_code(200);
