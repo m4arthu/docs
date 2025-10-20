@@ -7,23 +7,46 @@
   },
   "favicon": "https://api.braix.com.br/assets/icon.png",
   "colors": {
-    "primary": "#1a1a1a",
-    "light": "#2d2d2d",
-    "dark": "#000000",
+    "primary": "#00D4AA",
+    "light": "#F8FAFC",
+    "dark": "#0F172A",
+    "gray": {
+      "100": "#F1F5F9",
+      "200": "#E2E8F0",
+      "300": "#CBD5E1",
+      "400": "#94A3B8",
+      "500": "#64748B",
+      "600": "#475569",
+      "700": "#334155",
+      "800": "#1E293B",
+      "900": "#0F172A"
+    },
     "anchors": {
-      "from": "#1a1a1a",
-      "to": "#404040"
+      "from": "#00D4AA",
+      "to": "#00B894"
     }
   },
   "topbarLinks": [
     {
-      "name": "Support",
-      "url": "mailto:support@braix.com"
+      "name": "Documentação",
+      "url": "/introduction"
+    },
+    {
+      "name": "Guides",
+      "url": "/guides/pix-integration"
+    },
+    {
+      "name": "API Reference",
+      "url": "/api-reference/endpoints"
+    },
+    {
+      "name": "Changelog",
+      "url": "/changelog"
     }
   ],
   "topbarCtaButton": {
-    "name": "Dashboard",
-    "url": "https://dashboard.braix.com.br"
+    "name": "Get Started",
+    "url": "/quickstart"
   },
   "tabs": [
     {
@@ -33,6 +56,10 @@
     {
       "name": "Guides",
       "url": "guides"
+    },
+    {
+      "name": "Webhooks",
+      "url": "webhooks"
     }
   ],
 
@@ -42,7 +69,8 @@
       "pages": [
         "introduction",
         "quickstart",
-        "authentication"
+        "authentication",
+        "changelog"
       ]
     },
     {
@@ -57,8 +85,7 @@
         "api-reference/check-transaction-status",
         "api-reference/check-med-status",
         "api-reference/pix-export",
-        "api-reference/get-user-balance",
-        "api-reference/webhooks"
+        "api-reference/get-user-balance"
       ]
     },
     {
@@ -66,13 +93,18 @@
       "pages": [
         "guides/pix-integration",
         "guides/webhook-handling",
-        "guides/error-handling",
-        "guides/webhooks",
-        "guides/webhooks/receive",
-        "guides/webhooks/transfer",
-        "guides/webhooks/cashout",
-        "guides/webhooks/refund",
-        "guides/webhooks/infraction"
+        "guides/error-handling"
+      ]
+    },
+    {
+      "group": "Webhooks",
+      "pages": [
+        "webhooks/webhooks",
+        "webhooks/receive",
+        "webhooks/transfer",
+        "webhooks/cashout",
+        "webhooks/refund",
+        "webhooks/infraction"
       ]
     }
   ],
@@ -80,5 +112,86 @@
     "twitter": "https://twitter.com/braix",
     "github": "https://github.com/braix",
     "linkedin": "https://linkedin.com/company/braix"
+  },
+  "api": {
+    "baseUrl": "https://api.braix.com.br",
+    "auth": {
+      "method": "bearer"
+    }
+  },
+  "integrations": {
+    "algolia": {
+      "appId": "YOUR_ALGOLIA_APP_ID",
+      "apiKey": "YOUR_ALGOLIA_API_KEY",
+      "indexName": "braix-docs"
+    }
+  },
+  "anchors": {
+    "components": [
+      {
+        "name": "CodeGroup",
+        "url": "https://mintlify.com/components/code-group"
+      },
+      {
+        "name": "ResponseExample",
+        "url": "https://mintlify.com/components/response-example"
+      },
+      {
+        "name": "ParamField",
+        "url": "https://mintlify.com/components/param-field"
+      },
+      {
+        "name": "CardGroup",
+        "url": "https://mintlify.com/components/card-group"
+      },
+      {
+        "name": "AccordionGroup",
+        "url": "https://mintlify.com/components/accordion-group"
+      },
+      {
+        "name": "Steps",
+        "url": "https://mintlify.com/components/steps"
+      },
+      {
+        "name": "Warning",
+        "url": "https://mintlify.com/components/warning"
+      },
+      {
+        "name": "Check",
+        "url": "https://mintlify.com/components/check"
+      }
+    ]
+  },
+  "search": {
+    "placeholder": "Search...",
+    "shortcut": "⌘K"
+  },
+  "ai": {
+    "provider": "openai",
+    "model": "gpt-4"
+  },
+  "features": {
+    "search": {
+      "enabled": true,
+      "placeholder": "Search...",
+      "shortcut": "⌘K"
+    },
+    "ai": {
+      "enabled": true,
+      "placeholder": "Ask a question...",
+      "shortcut": "⌘I"
+    },
+    "darkMode": true,
+    "breadcrumbs": true,
+    "backToTop": true,
+    "editPage": {
+      "baseUrl": "https://github.com/braix/docs-api/edit/main"
+    }
+  },
+  "theme": {
+    "colorScheme": "slate",
+    "typography": {
+      "fontFamily": "Inter, system-ui, sans-serif"
+    }
   }
 }

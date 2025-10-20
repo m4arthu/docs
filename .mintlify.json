@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "theme": "modern",
+  "features": {
+    "search": true,
+    "ai": true,
+    "darkMode": true,
+    "breadcrumbs": true,
+    "backToTop": true,
+    "editPage": {
+      "baseUrl": "https://github.com/braix/docs-api/edit/main"
+    }
+  },
+  "customCss": ".mintlify-theme { --mintlify-primary: #00D4AA; --mintlify-primary-hover: #00B894; }"
+}

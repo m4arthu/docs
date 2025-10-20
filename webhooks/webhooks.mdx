@@ -14,23 +14,23 @@ Os webhooks são notificações HTTP enviadas pela braix quando eventos específ
 ## Tipos de Webhooks
 
 <CardGroup cols={2}>
-<Card title="RECEIVE" icon="arrow-down" href="/guides/webhooks/receive">
+<Card title="RECEIVE" icon="arrow-down" href="/webhooks/receive">
   Pagamento PIX recebido e liquidado
 </Card>
 
-<Card title="TRANSFER" icon="arrow-up" href="/guides/webhooks/transfer">
+<Card title="TRANSFER" icon="arrow-up" href="/webhooks/transfer">
   Saque PIX confirmado e liquidado
 </Card>
 
-<Card title="CASHOUT" icon="x" href="/guides/webhooks/cashout">
+<Card title="CASHOUT" icon="x" href="/webhooks/cashout">
   Saque PIX rejeitado ou cancelado
 </Card>
 
-<Card title="REFUND" icon="refresh-cw" href="/guides/webhooks/refund">
+<Card title="REFUND" icon="refresh-cw" href="/webhooks/refund">
   Transação estornada
 </Card>
 
-<Card title="INFRACTION" icon="alert-triangle" href="/guides/webhooks/infraction">
+<Card title="INFRACTION" icon="alert-triangle" href="/webhooks/infraction">
   Infração PIX reportada ou finalizada
 </Card>
 </CardGroup>
@@ -313,8 +313,8 @@ app.post('/webhooks/braix', (req, res) => {
 
 Agora que você entende os conceitos básicos, explore os guias específicos para cada tipo de webhook:
 
-- [RECEIVE - Pagamentos Recebidos](/guides/webhooks/receive)
-- [TRANSFER - Saques Confirmados](/guides/webhooks/transfer)
-- [CASHOUT - Saques Rejeitados](/guides/webhooks/cashout)
-- [REFUND - Estornos](/guides/webhooks/refund)
-- [INFRACTION - Infrações PIX](/guides/webhooks/infraction)
+- [RECEIVE - Pagamentos Recebidos](/webhooks/receive)
+- [TRANSFER - Saques Confirmados](/webhooks/transfer)
+- [CASHOUT - Saques Rejeitados](/webhooks/cashout)
+- [REFUND - Estornos](/webhooks/refund)
+- [INFRACTION - Infrações PIX](/webhooks/infraction)
