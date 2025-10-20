@@ -10,17 +10,6 @@
     "primary": "#00D4AA",
     "light": "#F8FAFC",
     "dark": "#0F172A",
-    "gray": {
-      "100": "#F1F5F9",
-      "200": "#E2E8F0",
-      "300": "#CBD5E1",
-      "400": "#94A3B8",
-      "500": "#64748B",
-      "600": "#475569",
-      "700": "#334155",
-      "800": "#1E293B",
-      "900": "#0F172A"
-    },
     "anchors": {
       "from": "#00D4AA",
       "to": "#00B894"
@@ -126,42 +115,40 @@
       "indexName": "braix-docs"
     }
   },
-  "anchors": {
-    "components": [
-      {
-        "name": "CodeGroup",
-        "url": "https://mintlify.com/components/code-group"
-      },
-      {
-        "name": "ResponseExample",
-        "url": "https://mintlify.com/components/response-example"
-      },
-      {
-        "name": "ParamField",
-        "url": "https://mintlify.com/components/param-field"
-      },
-      {
-        "name": "CardGroup",
-        "url": "https://mintlify.com/components/card-group"
-      },
-      {
-        "name": "AccordionGroup",
-        "url": "https://mintlify.com/components/accordion-group"
-      },
-      {
-        "name": "Steps",
-        "url": "https://mintlify.com/components/steps"
-      },
-      {
-        "name": "Warning",
-        "url": "https://mintlify.com/components/warning"
-      },
-      {
-        "name": "Check",
-        "url": "https://mintlify.com/components/check"
-      }
-    ]
-  },
+  "anchors": [
+    {
+      "name": "CodeGroup",
+      "url": "https://mintlify.com/components/code-group"
+    },
+    {
+      "name": "ResponseExample",
+      "url": "https://mintlify.com/components/response-example"
+    },
+    {
+      "name": "ParamField",
+      "url": "https://mintlify.com/components/param-field"
+    },
+    {
+      "name": "CardGroup",
+      "url": "https://mintlify.com/components/card-group"
+    },
+    {
+      "name": "AccordionGroup",
+      "url": "https://mintlify.com/components/accordion-group"
+    },
+    {
+      "name": "Steps",
+      "url": "https://mintlify.com/components/steps"
+    },
+    {
+      "name": "Warning",
+      "url": "https://mintlify.com/components/warning"
+    },
+    {
+      "name": "Check",
+      "url": "https://mintlify.com/components/check"
+    }
+  ],
   "search": {
     "placeholder": "Search...",
     "shortcut": "⌘K"
@@ -188,10 +175,5 @@
       "baseUrl": "https://github.com/braix/docs-api/edit/main"
     }
   },
-  "theme": {
-    "colorScheme": "slate",
-    "typography": {
-      "fontFamily": "Inter, system-ui, sans-serif"
-    }
-  }
+  "theme": "slate"
 }
