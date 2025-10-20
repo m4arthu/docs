@@ -116,43 +116,12 @@
     }
   },
   "anchors": [
-    {
-      "name": "CodeGroup",
-      "url": "https://mintlify.com/components/code-group"
-    },
-    {
-      "name": "ResponseExample",
-      "url": "https://mintlify.com/components/response-example"
-    },
-    {
-      "name": "ParamField",
-      "url": "https://mintlify.com/components/param-field"
-    },
-    {
-      "name": "CardGroup",
-      "url": "https://mintlify.com/components/card-group"
-    },
-    {
-      "name": "AccordionGroup",
-      "url": "https://mintlify.com/components/accordion-group"
-    },
-    {
-      "name": "Steps",
-      "url": "https://mintlify.com/components/steps"
-    },
-    {
-      "name": "Warning",
-      "url": "https://mintlify.com/components/warning"
-    },
-    {
-      "name": "Check",
-      "url": "https://mintlify.com/components/check"
-    }
+   
   ],
   "features": {
     "darkMode": true,
     "breadcrumbs": true,
     "backToTop": true
   },
-  "theme": "venus"
+  "theme": "prism"
 }
