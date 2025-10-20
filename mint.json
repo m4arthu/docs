@@ -55,7 +55,6 @@
         "introduction",
         "quickstart",
         "authentication",
-        "changelog"
       ]
     },
     {
@@ -119,5 +118,6 @@
     "breadcrumbs": true,
     "backToTop": true
   },
-  "theme": "venus"
+  "theme": "venus",
+  "customCss": ".http-method { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; color: white; margin-bottom: 16px; } .http-post { background-color: #10B981; } .http-get { background-color: #3B82F6; } .http-put { background-color: #F59E0B; } .http-delete { background-color: #EF4444; }"
 }
