@@ -220,33 +220,35 @@ Sent when a PIX infraction is finalized with a result (AGREED or DISAGREED).
 
 ## Webhook Security
 
-### Signature Verification
+### Checksum Verification
 
-All webhooks include a signature for verification. Verify the signature to ensure the webhook is from braix:
+All webhooks include a `checksum` field for verification. Verify the checksum to ensure the webhook is authentic:
 
 <CodeGroup>
 ```javascript Node.js
 const crypto = require('crypto');
 
-const verifyWebhookSignature = (payload, signature, secret) => {
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(payload)
+const verifyChecksum = (data, receivedChecksum, secret) => {
+  // O checksum é calculado com base nos dados da transação original
+  // Deve ser o mesmo checksum retornado na requisição de geração do QR Code ou Payment
+  const expectedChecksum = crypto
+    .createHash('sha256')
+    .update(JSON.stringify(data))
     .digest('hex');
   
   return crypto.timingSafeEqual(
-    Buffer.from(signature.replace('sha256=', '')),
-    Buffer.from(expectedSignature)
+    Buffer.from(receivedChecksum),
+    Buffer.from(expectedChecksum)
   );
 };
 
 // In your webhook handler
 app.post('/webhooks/braix', (req, res) => {
-  const signature = req.headers['x-braix-signature'];
-  const payload = JSON.stringify(req.body);
+  const { data } = req.body;
+  const receivedChecksum = data.checksum;
   
-  if (!verifyWebhookSignature(payload, signature, process.env.WEBHOOK_SECRET)) {
-    return res.status(401).json({ error: 'Invalid signature' });
+  if (!verifyChecksum(data, receivedChecksum, process.env.WEBHOOK_SECRET)) {
+    return res.status(401).json({ error: 'Invalid checksum' });
   }
   
   // Process webhook
@@ -255,26 +257,25 @@ app.post('/webhooks/braix', (req, res) => {
 ```
 
 ```python Python
-import hmac
 import hashlib
+import hmac
 
-def verify_webhook_signature(payload, signature, secret):
-    expected_signature = hmac.new(
-        secret.encode('utf-8'),
-        payload.encode('utf-8'),
-        hashlib.sha256
+def verify_checksum(data, received_checksum, secret):
+    # O checksum é calculado com base nos dados da transação original
+    expected_checksum = hashlib.sha256(
+        json.dumps(data, sort_keys=True).encode()
     ).hexdigest()
     
-    return hmac.compare_digest(signature.replace('sha256=', ''), expected_signature)
+    return hmac.compare_digest(received_checksum, expected_checksum)
 
 # In your webhook handler
 @app.route('/webhooks/braix', methods=['POST'])
 def handle_webhook():
-    signature = request.headers.get('X-braix-Signature')
-    payload = request.get_data(as_text=True)
+    data = request.get_json()
+    received_checksum = data.get('data', {}).get('checksum')
     
-    if not verify_webhook_signature(payload, signature, os.getenv('WEBHOOK_SECRET')):
-        return jsonify({'error': 'Invalid signature'}), 401
+    if not verify_checksum(data.get('data', {}), received_checksum, os.getenv('WEBHOOK_SECRET')):
+        return jsonify({'error': 'Invalid checksum'}), 401
     
     # Process webhook
     return jsonify({'received': True})
@@ -282,18 +283,18 @@ def handle_webhook():
 
 ```php PHP
 <?php
-function verifyWebhookSignature($payload, $signature, $secret) {
-    $expectedSignature = hash_hmac('sha256', $payload, $secret);
-    return hash_equals($signature, 'sha256=' . $expectedSignature);
+function verifyChecksum($data, $receivedChecksum, $secret) {
+    $expectedChecksum = hash('sha256', json_encode($data));
+    return hash_equals($receivedChecksum, $expectedChecksum);
 }
 
 // In your webhook handler
-$signature = $_SERVER['HTTP_X_braix_SIGNATURE'] ?? '';
-$payload = file_get_contents('php://input');
+$data = json_decode(file_get_contents('php://input'), true);
+$receivedChecksum = $data['data']['checksum'] ?? '';
 
-if (!verifyWebhookSignature($payload, $signature, $_ENV['WEBHOOK_SECRET'])) {
+if (!verifyChecksum($data['data'], $receivedChecksum, $_ENV['WEBHOOK_SECRET'])) {
     http_response_code(401);
-    echo json_encode(['error' => 'Invalid signature']);
+    echo json_encode(['error' => 'Invalid checksum']);
     exit;
 }
 
@@ -320,12 +321,8 @@ braix sends the following headers with webhooks:
   Always `application/json`
 </ParamField>
 
-<ParamField header="X-braix-Signature" type="string">
-  HMAC-SHA256 signature for verification
-</ParamField>
-
 <ParamField header="X-braix-Event" type="string">
-  The event type (e.g., `PAYMENT_RECEIVED`)
+  The event type (e.g., `RECEIVE`, `TRANSFER`, `CASHOUT`, `REFUND`, `INFRACTION`)
 </ParamField>
 
 <ParamField header="X-braix-Delivery" type="string">
@@ -392,14 +389,15 @@ Webhooks that fail after all retries are marked as failed and won't be retried a
   - Use proper HTTP status codes (200 for success)
 </Accordion>
 
-<Accordion title="Signature Verification Failures">
+<Accordion title="Checksum Verification Failures">
   - Verify you're using the correct webhook secret
   - Ensure payload is not modified before verification
-  - Check that signature header is properly extracted
+  - Check that checksum field is properly extracted
+  - Compare with checksum from original transaction
 </Accordion>
 
 <Accordion title="Duplicate Webhooks">
-  - Implement idempotency using the delivery ID
+  - Implement idempotency using the transaction ID
   - Store processed webhook IDs to prevent duplicates
   - Use database transactions for atomic operations
 </Accordion>

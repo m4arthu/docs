@@ -13,33 +13,35 @@ Webhooks are HTTP callbacks that braix sends to your application when specific e
 
 ## Webhook Security
 
-### Signature Verification
+### Checksum Verification
 
-All braix webhooks include a signature for verification. Always verify the signature to ensure the webhook is authentic:
+All braix webhooks include a `checksum` field for verification. Always verify the checksum to ensure the webhook is authentic:
 
 <CodeGroup>
 ```javascript Node.js
 const crypto = require('crypto');
 
-const verifyWebhookSignature = (payload, signature, secret) => {
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(payload)
+const verifyChecksum = (data, receivedChecksum, secret) => {
+  // O checksum é calculado com base nos dados da transação original
+  // Deve ser o mesmo checksum retornado na requisição de geração do QR Code ou Payment
+  const expectedChecksum = crypto
+    .createHash('sha256')
+    .update(JSON.stringify(data))
     .digest('hex');
   
   return crypto.timingSafeEqual(
-    Buffer.from(signature.replace('sha256=', '')),
-    Buffer.from(expectedSignature)
+    Buffer.from(receivedChecksum),
+    Buffer.from(expectedChecksum)
   );
 };
 
 // In your webhook handler
 app.post('/webhooks/braix', (req, res) => {
-  const signature = req.headers['x-braix-signature'];
-  const payload = JSON.stringify(req.body);
+  const { data } = req.body;
+  const receivedChecksum = data.checksum;
   
-  if (!verifyWebhookSignature(payload, signature, process.env.WEBHOOK_SECRET)) {
-    return res.status(401).json({ error: 'Invalid signature' });
+  if (!verifyChecksum(data, receivedChecksum, process.env.WEBHOOK_SECRET)) {
+    return res.status(401).json({ error: 'Invalid checksum' });
   }
   
   // Process webhook safely
@@ -48,26 +50,25 @@ app.post('/webhooks/braix', (req, res) => {
 ```
 
 ```python Python
-import hmac
 import hashlib
+import hmac
 
-def verify_webhook_signature(payload, signature, secret):
-    expected_signature = hmac.new(
-        secret.encode('utf-8'),
-        payload.encode('utf-8'),
-        hashlib.sha256
+def verify_checksum(data, received_checksum, secret):
+    # O checksum é calculado com base nos dados da transação original
+    expected_checksum = hashlib.sha256(
+        json.dumps(data, sort_keys=True).encode()
     ).hexdigest()
     
-    return hmac.compare_digest(signature.replace('sha256=', ''), expected_signature)
+    return hmac.compare_digest(received_checksum, expected_checksum)
 
 # In your webhook handler
 @app.route('/webhooks/braix', methods=['POST'])
 def handle_webhook():
-    signature = request.headers.get('X-braix-Signature')
-    payload = request.get_data(as_text=True)
+    data = request.get_json()
+    received_checksum = data.get('data', {}).get('checksum')
     
-    if not verify_webhook_signature(payload, signature, os.getenv('WEBHOOK_SECRET')):
-        return jsonify({'error': 'Invalid signature'}), 401
+    if not verify_checksum(data.get('data', {}), received_checksum, os.getenv('WEBHOOK_SECRET')):
+        return jsonify({'error': 'Invalid checksum'}), 401
     
     # Process webhook safely
     return jsonify({'received': True})
@@ -75,18 +76,18 @@ def handle_webhook():
 
 ```php PHP
 <?php
-function verifyWebhookSignature($payload, $signature, $secret) {
-    $expectedSignature = hash_hmac('sha256', $payload, $secret);
-    return hash_equals($signature, 'sha256=' . $expectedSignature);
+function verifyChecksum($data, $receivedChecksum, $secret) {
+    $expectedChecksum = hash('sha256', json_encode($data));
+    return hash_equals($receivedChecksum, $expectedChecksum);
 }
 
 // In your webhook handler
-$signature = $_SERVER['HTTP_X_braix_SIGNATURE'] ?? '';
-$payload = file_get_contents('php://input');
+$data = json_decode(file_get_contents('php://input'), true);
+$receivedChecksum = $data['data']['checksum'] ?? '';
 
-if (!verifyWebhookSignature($payload, $signature, $_ENV['WEBHOOK_SECRET'])) {
+if (!verifyChecksum($data['data'], $receivedChecksum, $_ENV['WEBHOOK_SECRET'])) {
     http_response_code(401);
-    echo json_encode(['error' => 'Invalid signature']);
+    echo json_encode(['error' => 'Invalid checksum']);
     exit;
 }
 
@@ -98,214 +99,77 @@ echo json_encode(['received' => true]);
 </CodeGroup>
 
 <Warning>
-Never process webhooks without signature verification. This is a critical security requirement.
+Never process webhooks without checksum verification. This is a critical security requirement.
 </Warning>
 
 ## Webhook Events
 
-### Payment Events
+braix sends webhooks for the following events:
 
-<AccordionGroup>
-<Accordion title="PAYMENT_RECEIVED">
-  Sent when a PIX payment is received and processed successfully.
+<CardGroup cols={2}>
+<Card title="RECEIVE" icon="arrow-down" href="/guides/webhooks/receive">
+  **Pagamento PIX recebido e liquidado**
+  - Depósito confirmado
+  - Valor creditado na conta
+  - Transação finalizada
+</Card>
 
-  ```json
-  {
-    "type": "PAYMENT_RECEIVED",
-    "data": {
-      "transactionId": "tx_123456789",
-      "endToEndId": "E12345678202401151234567890",
-      "amount": 10.50,
-      "pixKey": "user@example.com",
-      "status": "completed",
-      "gateway": "woovi",
-      "externalId": "order_123",
-      "payer": {
-        "name": "João Silva",
-        "document": "12345678901"
-      },
-      "timestamp": "2024-01-15T10:30:00Z"
-    }
+<Card title="TRANSFER" icon="arrow-up" href="/guides/webhooks/transfer">
+  **Saque PIX confirmado e liquidado**
+  - Saque processado com sucesso
+  - Valor debitado da conta
+  - Transação finalizada
+</Card>
+
+<Card title="CASHOUT" icon="x" href="/guides/webhooks/cashout">
+  **Saque PIX rejeitado ou cancelado**
+  - Saque rejeitado pelo banco
+  - Transação cancelada
+  - Valor não debitado
+</Card>
+
+<Card title="REFUND" icon="refresh-cw" href="/guides/webhooks/refund">
+  **Transação estornada**
+  - Estorno de depósito ou saque
+  - Valor revertido
+  - Transação cancelada
+</Card>
+
+<Card title="INFRACTION" icon="alert-triangle" href="/guides/webhooks/infraction">
+  **Infração PIX reportada ou finalizada**
+  - Contestação de transação
+  - Análise de fraude
+  - Resultado da contestação
+</Card>
+</CardGroup>
+
+### Estrutura do Payload
+
+Todos os webhooks seguem uma estrutura consistente:
+
+```json
+{
+  "type": "TIPO_DO_WEBHOOK",
+  "data": {
+    // Dados específicos do evento
+    "checksum": "hash_checksum"
   }
-  ```
-</Accordion>
+}
+```
 
-<Accordion title="PAYMENT_FAILED">
-  Sent when a PIX payment fails.
+### Campos Comuns
 
-  ```json
-  {
-    "type": "PAYMENT_FAILED",
-    "data": {
-      "transactionId": "tx_123456789",
-      "endToEndId": "E12345678202401151234567890",
-      "amount": 10.50,
-      "pixKey": "user@example.com",
-      "status": "failed",
-      "gateway": "woovi",
-      "externalId": "order_123",
-      "error": {
-        "code": "INSUFFICIENT_FUNDS",
-        "message": "Insufficient funds in account"
-      },
-      "timestamp": "2024-01-15T10:30:00Z"
-    }
-  }
-  ```
-</Accordion>
+<ParamField body="type" type="string">
+  Tipo do webhook (RECEIVE, TRANSFER, CASHOUT, REFUND, INFRACTION)
+</ParamField>
 
-<Accordion title="PAYMENT_CANCELLED">
-  Sent when a PIX payment is cancelled.
+<ParamField body="data" type="object">
+  Dados específicos do evento
+</ParamField>
 
-  ```json
-  {
-    "type": "PAYMENT_CANCELLED",
-    "data": {
-      "transactionId": "tx_123456789",
-      "endToEndId": "E12345678202401151234567890",
-      "amount": 10.50,
-      "pixKey": "user@example.com",
-      "status": "cancelled",
-      "gateway": "woovi",
-      "externalId": "order_123",
-      "timestamp": "2024-01-15T10:30:00Z"
-    }
-  }
-  ```
-</Accordion>
-</AccordionGroup>
-
-### QR Code Events
-
-<AccordionGroup>
-<Accordion title="QR_CODE_CREATED">
-  Sent when a PIX QR code is generated.
-
-  ```json
-  {
-    "type": "QR_CODE_CREATED",
-    "data": {
-      "qrCodeId": "qr_123456789",
-      "amount": 25.00,
-      "status": "active",
-      "externalId": "qr_123",
-      "qrCode": "00020126580014br.gov.bcb.pix...",
-      "expiresAt": "2024-01-15T11:30:00Z",
-      "timestamp": "2024-01-15T10:30:00Z"
-    }
-  }
-  ```
-</Accordion>
-
-<Accordion title="QR_CODE_PAID">
-  Sent when a PIX QR code is paid.
-
-  ```json
-  {
-    "type": "QR_CODE_PAID",
-    "data": {
-      "qrCodeId": "qr_123456789",
-      "transactionId": "tx_123456789",
-      "endToEndId": "E12345678202401151234567890",
-      "amount": 25.00,
-      "status": "paid",
-      "externalId": "qr_123",
-      "payer": {
-        "name": "Maria Santos",
-        "document": "98765432100"
-      },
-      "timestamp": "2024-01-15T10:30:00Z"
-    }
-  }
-  ```
-</Accordion>
-
-<Accordion title="QR_CODE_EXPIRED">
-  Sent when a PIX QR code expires.
-
-  ```json
-  {
-    "type": "QR_CODE_EXPIRED",
-    "data": {
-      "qrCodeId": "qr_123456789",
-      "amount": 25.00,
-      "status": "expired",
-      "externalId": "qr_123",
-      "expiredAt": "2024-01-15T11:30:00Z",
-      "timestamp": "2024-01-15T11:30:00Z"
-    }
-  }
-  ```
-</Accordion>
-</AccordionGroup>
-
-### Refund Events
-
-<AccordionGroup>
-<Accordion title="REFUND_PROCESSING">
-  Sent when a refund is being processed.
-
-  ```json
-  {
-    "type": "REFUND_PROCESSING",
-    "data": {
-      "refundId": "ref_123456789",
-      "endToEndId": "E12345678202401151234567890",
-      "originalTransactionId": "tx_123456789",
-      "amount": 10.50,
-      "status": "processing",
-      "gateway": "woovi",
-      "externalId": "order_123",
-      "timestamp": "2024-01-15T10:30:00Z"
-    }
-  }
-  ```
-</Accordion>
-
-<Accordion title="REFUND_COMPLETED">
-  Sent when a refund is completed.
-
-  ```json
-  {
-    "type": "REFUND_COMPLETED",
-    "data": {
-      "refundId": "ref_123456789",
-      "endToEndId": "E12345678202401151234567890",
-      "originalTransactionId": "tx_123456789",
-      "amount": 10.50,
-      "status": "completed",
-      "gateway": "woovi",
-      "externalId": "order_123",
-      "timestamp": "2024-01-15T10:30:00Z"
-    }
-  }
-  ```
-</Accordion>
-
-<Accordion title="REFUND_FAILED">
-  Sent when a refund fails.
-
-  ```json
-  {
-    "type": "REFUND_FAILED",
-    "data": {
-      "refundId": "ref_123456789",
-      "endToEndId": "E12345678202401151234567890",
-      "originalTransactionId": "tx_123456789",
-      "amount": 10.50,
-      "status": "failed",
-      "gateway": "woovi",
-      "externalId": "order_123",
-      "error": {
-        "code": "REFUND_NOT_ALLOWED",
-        "message": "Refund not allowed for this transaction"
-      },
-      "timestamp": "2024-01-15T10:30:00Z"
-    }
-  }
-  ```
-</Accordion>
-</AccordionGroup>
+<ParamField body="data.checksum" type="string">
+  Hash de verificação da transação (quando disponível)
+</ParamField>
 
 ## Webhook Implementation
 
@@ -323,20 +187,24 @@ app.post('/webhooks/braix', (req, res) => {
   
   try {
     switch (type) {
-      case 'PAYMENT_RECEIVED':
-        handlePaymentReceived(data);
+      case 'RECEIVE':
+        handleReceive(data);
         break;
         
-      case 'PAYMENT_FAILED':
-        handlePaymentFailed(data);
+      case 'TRANSFER':
+        handleTransfer(data);
         break;
         
-      case 'QR_CODE_PAID':
-        handleQrCodePaid(data);
+      case 'CASHOUT':
+        handleCashout(data);
         break;
         
-      case 'REFUND_COMPLETED':
-        handleRefundCompleted(data);
+      case 'REFUND':
+        handleRefund(data);
+        break;
+        
+      case 'INFRACTION':
+        handleInfraction(data);
         break;
         
       default:
@@ -350,24 +218,29 @@ app.post('/webhooks/braix', (req, res) => {
   }
 });
 
-function handlePaymentReceived(data) {
+function handleReceive(data) {
   console.log('Payment received:', data);
   // Update database, send confirmation email, etc.
 }
 
-function handlePaymentFailed(data) {
-  console.log('Payment failed:', data);
-  // Handle failed payment, notify user, etc.
+function handleTransfer(data) {
+  console.log('Transfer completed:', data);
+  // Handle successful withdrawal
 }
 
-function handleQrCodePaid(data) {
-  console.log('QR Code paid:', data);
-  // Process QR code payment
+function handleCashout(data) {
+  console.log('Transfer rejected:', data);
+  // Handle rejected withdrawal
 }
 
-function handleRefundCompleted(data) {
-  console.log('Refund completed:', data);
-  // Update database, notify user, etc.
+function handleRefund(data) {
+  console.log('Refund processed:', data);
+  // Handle refund
+}
+
+function handleInfraction(data) {
+  console.log('Infraction reported:', data);
+  // Handle infraction
 }
 
 app.listen(3000, () => {
@@ -387,14 +260,16 @@ def handle_webhook():
     webhook_type = data.get('type')
     
     try:
-        if webhook_type == 'PAYMENT_RECEIVED':
-            handle_payment_received(data.get('data'))
-        elif webhook_type == 'PAYMENT_FAILED':
-            handle_payment_failed(data.get('data'))
-        elif webhook_type == 'QR_CODE_PAID':
-            handle_qr_code_paid(data.get('data'))
-        elif webhook_type == 'REFUND_COMPLETED':
-            handle_refund_completed(data.get('data'))
+        if webhook_type == 'RECEIVE':
+            handle_receive(data.get('data'))
+        elif webhook_type == 'TRANSFER':
+            handle_transfer(data.get('data'))
+        elif webhook_type == 'CASHOUT':
+            handle_cashout(data.get('data'))
+        elif webhook_type == 'REFUND':
+            handle_refund(data.get('data'))
+        elif webhook_type == 'INFRACTION':
+            handle_infraction(data.get('data'))
         else:
             print(f'Unknown webhook type: {webhook_type}')
         
@@ -403,21 +278,25 @@ def handle_webhook():
         print(f'Webhook processing error: {e}')
         return jsonify({'error': 'Processing failed'}), 500
 
-def handle_payment_received(data):
+def handle_receive(data):
     print(f'Payment received: {data}')
     # Update database, send confirmation email, etc.
 
-def handle_payment_failed(data):
-    print(f'Payment failed: {data}')
-    # Handle failed payment, notify user, etc.
+def handle_transfer(data):
+    print(f'Transfer completed: {data}')
+    # Handle successful withdrawal
 
-def handle_qr_code_paid(data):
-    print(f'QR Code paid: {data}')
-    # Process QR code payment
+def handle_cashout(data):
+    print(f'Transfer rejected: {data}')
+    # Handle rejected withdrawal
 
-def handle_refund_completed(data):
-    print(f'Refund completed: {data}')
-    # Update database, notify user, etc.
+def handle_refund(data):
+    print(f'Refund processed: {data}')
+    # Handle refund
+
+def handle_infraction(data):
+    print(f'Infraction reported: {data}')
+    # Handle infraction
 
 if __name__ == '__main__':
     app.run(port=3000)
@@ -433,20 +312,24 @@ $webhookType = $data['type'] ?? '';
 
 try {
     switch ($webhookType) {
-        case 'PAYMENT_RECEIVED':
-            handlePaymentReceived($data['data']);
+        case 'RECEIVE':
+            handleReceive($data['data']);
             break;
             
-        case 'PAYMENT_FAILED':
-            handlePaymentFailed($data['data']);
+        case 'TRANSFER':
+            handleTransfer($data['data']);
             break;
             
-        case 'QR_CODE_PAID':
-            handleQrCodePaid($data['data']);
+        case 'CASHOUT':
+            handleCashout($data['data']);
             break;
             
-        case 'REFUND_COMPLETED':
-            handleRefundCompleted($data['data']);
+        case 'REFUND':
+            handleRefund($data['data']);
+            break;
+            
+        case 'INFRACTION':
+            handleInfraction($data['data']);
             break;
             
         default:
@@ -461,24 +344,29 @@ try {
     echo json_encode(['error' => 'Processing failed']);
 }
 
-function handlePaymentReceived($data) {
+function handleReceive($data) {
     error_log('Payment received: ' . json_encode($data));
     // Update database, send confirmation email, etc.
 }
 
-function handlePaymentFailed($data) {
-    error_log('Payment failed: ' . json_encode($data));
-    // Handle failed payment, notify user, etc.
+function handleTransfer($data) {
+    error_log('Transfer completed: ' . json_encode($data));
+    // Handle successful withdrawal
 }
 
-function handleQrCodePaid($data) {
-    error_log('QR Code paid: ' . json_encode($data));
-    // Process QR code payment
+function handleCashout($data) {
+    error_log('Transfer rejected: ' . json_encode($data));
+    // Handle rejected withdrawal
 }
 
-function handleRefundCompleted($data) {
-    error_log('Refund completed: ' . json_encode($data));
-    // Update database, notify user, etc.
+function handleRefund($data) {
+    error_log('Refund processed: ' . json_encode($data));
+    // Handle refund
+}
+
+function handleInfraction($data) {
+    error_log('Infraction reported: ' . json_encode($data));
+    // Handle infraction
 }
 ?>
 ```
@@ -498,11 +386,13 @@ const processedWebhooks = new Set();
 app.use(express.json());
 
 app.post('/webhooks/braix', async (req, res) => {
-  const deliveryId = req.headers['x-braix-delivery'];
   const { type, data } = req.body;
   
+  // Use transaction ID for idempotency
+  const webhookId = data.id || data.txId || data.refundId;
+  
   // Check for duplicate webhooks
-  if (processedWebhooks.has(deliveryId)) {
+  if (processedWebhooks.has(webhookId)) {
     return res.status(200).json({ received: true, duplicate: true });
   }
   
@@ -511,7 +401,7 @@ app.post('/webhooks/braix', async (req, res) => {
     await processWebhook(type, data);
     
     // Mark as processed
-    processedWebhooks.add(deliveryId);
+    processedWebhooks.add(webhookId);
     
     res.status(200).json({ received: true });
   } catch (error) {
@@ -521,8 +411,25 @@ app.post('/webhooks/braix', async (req, res) => {
 });
 
 async function processWebhook(type, data) {
-  // Add your webhook processing logic here
-  console.log(`Processing webhook: ${type}`, data);
+  switch (type) {
+    case 'RECEIVE':
+      await handleReceive(data);
+      break;
+    case 'TRANSFER':
+      await handleTransfer(data);
+      break;
+    case 'CASHOUT':
+      await handleCashout(data);
+      break;
+    case 'REFUND':
+      await handleRefund(data);
+      break;
+    case 'INFRACTION':
+      await handleInfraction(data);
+      break;
+    default:
+      console.log(`Unknown webhook type: ${type}`);
+  }
 }
 ```
 
@@ -536,20 +443,23 @@ redis_client = redis.Redis(host='localhost', port=6379, db=0)
 
 @app.route('/webhooks/braix', methods=['POST'])
 def handle_webhook():
-    delivery_id = request.headers.get('X-braix-Delivery')
     data = request.get_json()
     webhook_type = data.get('type')
+    webhook_data = data.get('data', {})
+    
+    # Use transaction ID for idempotency
+    webhook_id = webhook_data.get('id') or webhook_data.get('txId') or webhook_data.get('refundId')
     
     # Check for duplicate webhooks
-    if redis_client.get(f'webhook:{delivery_id}'):
+    if redis_client.get(f'webhook:{webhook_id}'):
         return jsonify({'received': True, 'duplicate': True})
     
     try:
         # Process webhook
-        process_webhook(webhook_type, data.get('data'))
+        process_webhook(webhook_type, webhook_data)
         
         # Mark as processed (expires in 24 hours)
-        redis_client.setex(f'webhook:{delivery_id}', 86400, 'processed')
+        redis_client.setex(f'webhook:{webhook_id}', 86400, 'processed')
         
         return jsonify({'received': True})
     except Exception as e:
@@ -557,22 +467,35 @@ def handle_webhook():
         return jsonify({'error': 'Processing failed'}), 500
 
 def process_webhook(webhook_type, data):
-    # Add your webhook processing logic here
-    print(f'Processing webhook: {webhook_type}', data)
+    if webhook_type == 'RECEIVE':
+        handle_receive(data)
+    elif webhook_type == 'TRANSFER':
+        handle_transfer(data)
+    elif webhook_type == 'CASHOUT':
+        handle_cashout(data)
+    elif webhook_type == 'REFUND':
+        handle_refund(data)
+    elif webhook_type == 'INFRACTION':
+        handle_infraction(data)
+    else:
+        print(f'Unknown webhook type: {webhook_type}')
 ```
 
 ```php PHP
 <?php
 // webhook.php
-$deliveryId = $_SERVER['HTTP_X_braix_DELIVERY'] ?? '';
 $input = file_get_contents('php://input');
 $data = json_decode($input, true);
+
+// Use transaction ID for idempotency
+$webhookData = $data['data'] ?? [];
+$webhookId = $webhookData['id'] ?? $webhookData['txId'] ?? $webhookData['refundId'] ?? '';
 
 // Check for duplicate webhooks (use Redis in production)
 $redis = new Redis();
 $redis->connect('localhost', 6379);
 
-if ($redis->get("webhook:{$deliveryId}")) {
+if ($redis->get("webhook:{$webhookId}")) {
     http_response_code(200);
     echo json_encode(['received' => true, 'duplicate' => true]);
     exit;
@@ -580,10 +503,10 @@ if ($redis->get("webhook:{$deliveryId}")) {
 
 try {
     // Process webhook
-    processWebhook($data['type'], $data['data']);
+    processWebhook($data['type'], $webhookData);
     
     // Mark as processed (expires in 24 hours)
-    $redis->setex("webhook:{$deliveryId}", 86400, 'processed');
+    $redis->setex("webhook:{$webhookId}", 86400, 'processed');
     
     http_response_code(200);
     echo json_encode(['received' => true]);
@@ -594,8 +517,25 @@ try {
 }
 
 function processWebhook($type, $data) {
-    // Add your webhook processing logic here
-    error_log("Processing webhook: {$type} " . json_encode($data));
+    switch ($type) {
+        case 'RECEIVE':
+            handleReceive($data);
+            break;
+        case 'TRANSFER':
+            handleTransfer($data);
+            break;
+        case 'CASHOUT':
+            handleCashout($data);
+            break;
+        case 'REFUND':
+            handleRefund($data);
+            break;
+        case 'INFRACTION':
+            handleInfraction($data);
+            break;
+        default:
+            error_log("Unknown webhook type: {$type}");
+    }
 }
 ?>
 ```
@@ -686,14 +626,15 @@ Webhook endpoints that consistently return non-200 status codes will be disabled
   - Use proper HTTP status codes (200 for success)
 </Accordion>
 
-<Accordion title="Signature Verification Failures">
+<Accordion title="Checksum Verification Failures">
   - Verify you're using the correct webhook secret
   - Ensure payload is not modified before verification
-  - Check that signature header is properly extracted
+  - Check that checksum field is properly extracted
+  - Compare with checksum from original transaction
 </Accordion>
 
 <Accordion title="Duplicate Webhooks">
-  - Implement idempotency using the delivery ID
+  - Implement idempotency using the transaction ID
   - Store processed webhook IDs to prevent duplicates
   - Use database transactions for atomic operations
 </Accordion>
@@ -729,15 +670,15 @@ Webhook endpoints that consistently return non-200 status codes will be disabled
   - Check firewall and network configuration
 </Accordion>
 
-<Accordion title="Signature Verification Failing">
+<Accordion title="Checksum Verification Failing">
   - Verify webhook secret is correct
   - Check payload is not modified before verification
-  - Ensure signature header is properly extracted
-  - Test with webhook testing tools
+  - Ensure checksum field is properly extracted
+  - Compare with checksum from original transaction
 </Accordion>
 
 <Accordion title="Duplicate Webhooks">
-  - Implement idempotency using delivery ID
+  - Implement idempotency using transaction ID
   - Store processed webhook IDs
   - Use database transactions for atomic operations
   - Handle retry scenarios gracefully
