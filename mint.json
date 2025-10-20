@@ -27,10 +27,6 @@
     {
       "name": "API Reference",
       "url": "/api-reference/endpoints"
-    },
-    {
-      "name": "Changelog",
-      "url": "/changelog"
     }
   ],
   "topbarCtaButton": {
@@ -123,5 +119,5 @@
     "breadcrumbs": true,
     "backToTop": true
   },
-  "theme": "prism"
+  "theme": "venus"
 }
